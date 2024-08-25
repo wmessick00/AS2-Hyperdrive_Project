@@ -1,0 +1,1 @@
+Colorful skin that randomly chooses from several specially designed color palettes.
