@@ -26,10 +26,10 @@ fullsteep = jumping or skinvars.prefersteep
 
 SetScene{
 	ambientlight = "highwayinverted",
-	glowpasses = ifhifi(0.9,1),
-	glowspread = ifhifi(2,1),
+	glowpasses = ifhifi(4,1),
+	glowspread = ifhifi(1,0.5),
 	--radialblur_strength = ifhifi(1.85,0.5),
-	radialblur_strength = 1.85,
+	radialblur_strength = 2,
 	watertype = 1,
 	water = jumping, --only use the water cubes in wakeboard mode
 	--watertint = {r=255,g=255,b=255,a=11},
@@ -42,8 +42,8 @@ SetScene{
 	airdebris_count = 1500,
 	airdebris_density = 60,
 	airdebris_texture = ifhifi ("Hexagon128_2.png","Hexagon128_2.png"),
-	--airdebris_particlesize = .55,
-	--airdebris_fieldsize = 200,
+	--airdebris_particlesize = 1,
+	airdebris_fieldsize = 500,
 	--airdebris_layer = 13,
 	useblackgrid=false,
 	crease_strength=ifhifi(-47,0),
