@@ -387,7 +387,6 @@ starMesh = BuildMesh{
 				splitVertices = true,
 				barycentricTangents = true,
 				meshes={"hexsphere/hexx_baseline.obj", "hexsphere/hexx4.obj", "hexsphere/hexx01.obj", "hexsphere/hexx02.obj", "hexsphere/hexx03.obj"}
-
 			}	
 
 spikeMesh = BuildMesh{
@@ -565,12 +564,15 @@ CreateObject{
 	}
 }
 
+
 hexNodes_Zone = {}
 pyrtopNodes_Zone = {}
 pyrbotNodes_Zone = {}
+
 hexOffsets_Zone = {}
 pyrtopOffsets_Zone = {}
 pyrbotOffsets_Zone = {}
+
 hexRotationSpeeds_Zone = {}
 pyrtopRotationSpeeds_Zone = {}
 pyrbotRotationSpeeds_Zone = {}
@@ -722,6 +724,7 @@ BatchRenderEveryFrame{prefabName="PyramidBot",
 }
 end
 
+
 --This shows that scripted dynamic meshes can be used, but you probably don't need this
 --function AddQuadIndices(t, index0, index1, index2, index3)
 --	table.insert(t, index0)
@@ -820,6 +823,7 @@ end
 --	}
 --}
 
+
 --[[if buildingNodes == nil then
 	buildingNodes = {} --the track is made of nodes, each one with a position and rotation. This table will hold the indices of track nods that should have a skyscraper rendered at them (with some offset)
 	offsets = {}
@@ -862,7 +866,6 @@ end
 --						}]]
 --end
 
-if quality > 0 then
 if quality > 3 then
 wireTerrainMesh = BuildMesh{
 				recalculateNormalsEveryFrame=false,
@@ -892,7 +895,7 @@ CreateObject{ --creates a uniquely named prototype (prefab) that can be used lat
 		scale = {x=1,y=1,z=1}
 	}
 }
-end
+
 if terrainNodes == nil then
 	terrainNodes = {} --the track is made of nodes, each one with a position and rotation. This table will hold the indices of track nods that should have a skyscraper rendered at them (with some offset)
 	terrainOffsets = {}
@@ -937,6 +940,7 @@ if terrainNodes == nil then
 							--collisionLayer = 1,--will collision test with other batch-rendered objects on the same layer. set less than 0 for no other-object collision testing
 							testAndHideIfCollideWithTrack=false --if true, it checks each render location against a ray down the center of the track for collision. Any hits are not rendered
 						}
+	end
 end
 
 print("Track nodes: " .. #track)
@@ -970,7 +974,6 @@ function Update(dt, trackLocation, playerStrafe, playerJumpHeight, intensity)
 	if shipMaterial then
 		local enginePower = 3 + 20*intensity
 		UpdateShaderSettings{material=shipMaterial, shadersettings={_GlowScaler=enginePower}}
-	end
 end
 end
 

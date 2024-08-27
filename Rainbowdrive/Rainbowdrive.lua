@@ -86,10 +86,10 @@ end
 
 SetScene{
 	ambientlight = "highwayinverted",
-	glowpasses = ifhifi(0.9,1),
-	glowspread = ifhifi(2,2),
+	glowpasses = ifhifi(4,1),
+	glowspread = ifhifi(1,0.5),
 	--radialblur_strength = ifhifi(1.85,0.5),
-	radialblur_strength = 1.85,
+	radialblur_strength = 2,
 	watertype = 1,
 	water = jumping, --only use the water cubes in wakeboard mode
 	--watertint = {r=255,g=255,b=255,a=11},
@@ -111,6 +111,16 @@ SetScene{
 	closecam_far=22 --bringing this in closer than the default (50) improves the ship's shadow quality
 	--twistmode={curvescaler=1, steepscaler=.1} -- note: "cork" is the same as {curvescaler=1, steepscaler=1} and "cork_flatish" is the same as {curvescaler=1, steepscaler=.4}
 }
+
+--[[ radialBlurEffect = BuildMaterial{ -- background radial blur (seen mostly on star air debris trails)
+		shader="PostRadialBlur",
+		shadersettings={_Amount=.035, _Center={.5,.5,0}}
+	}
+
+AddPostEffect{
+	depth="background",
+	material = radialBlurEffect
+} ]]
 
 --LoadSounds{
 --	hit="hit.wav",
@@ -390,6 +400,11 @@ end
 
 if hifi then SetSkybox{
 	skyscreen = "thegridSky_2.shader",
+	--skyscreen = "Skyscreen/TheGrid",
+	--skyscreen = "Skyscreen/TheGridSkyBlue",
+	--[[ shadersettings = {
+		iSkyColor={1,1,1,1},
+	}, ]]
 	layer=18
 }
 end
@@ -1037,81 +1052,81 @@ end
 --						}]]
 --end
 
-if quality > 0 then
 if quality > 3 then
-wireTerrainMesh = BuildMesh{
-				recalculateNormalsEveryFrame=false,
-				--meshes={"centerbox.obj", "centerbox_m1.obj", "centerbox_m2.obj", "centerbox_m3.obj", "centerbox_m4.obj", "centerbox_m5.obj"}
-				--meshes={"sidebox.obj"}
-				meshes={"sideboxb0.obj", "sideboxb1.obj", "sideboxb2.obj", "sideboxb3.obj", "sideboxb4.obj", "sideboxb5.obj"}
-			}
+	wireTerrainMesh = BuildMesh{
+					recalculateNormalsEveryFrame=false,
+					--meshes={"centerbox.obj", "centerbox_m1.obj", "centerbox_m2.obj", "centerbox_m3.obj", "centerbox_m4.obj", "centerbox_m5.obj"}
+					--meshes={"sidebox.obj"}
+					meshes={"sideboxb0.obj", "sideboxb1.obj", "sideboxb2.obj", "sideboxb3.obj", "sideboxb4.obj", "sideboxb5.obj"}
+				}
 
-CreateObject{ --creates a uniquely named prototype (prefab) that can be used later in the script or by the mod script. The audiosprint mod uses prototypes created in it's skin script
-	name="SideBoxCloneMe",
-	gameobject={
-		pos={x=0,y=0,z=0},
-		--mesh="skyscraper42.obj",
-		mesh=wireTerrainMesh,
-		--shader="VertexColorUnlitTintedAlpha",
-		--shader="UnlitTintedTex",
-		shader="Proximity2ColorAlpha", -- fade out the distant lines to remove the noise from being smaller than pixels at distance
-		shadercolors={
-			_Color = {colorsource="highway", scaletype="intensity", minscaler=2, maxscaler=3}
-		},
-		shadersettings={
-			_StartDistance = 50,
-			_FullDistance = 125
-		},
-		texture="White.png",
-		--texture="skyscraper.png",
-		scale = {x=1,y=1,z=1}
+	CreateObject{ --creates a uniquely named prototype (prefab) that can be used later in the script or by the mod script. The audiosprint mod uses prototypes created in it's skin script
+		name="SideBoxCloneMe",
+		gameobject={
+			pos={x=0,y=0,z=0},
+			--mesh="skyscraper42.obj",
+			mesh=wireTerrainMesh,
+			--shader="VertexColorUnlitTintedAlpha",
+			--shader="UnlitTintedTex",
+			shader="Proximity2ColorAlpha", -- fade out the distant lines to remove the noise from being smaller than pixels at distance
+			shadercolors={
+				_Color = {colorsource="highway", scaletype="intensity", minscaler=2, maxscaler=3}
+			},
+			shadersettings={
+				_StartDistance = 50,
+				_FullDistance = 125
+			},
+			texture="White.png",
+			--texture="skyscraper.png",
+			scale = {x=1,y=1,z=1}
+		}
 	}
-}
-end
-if terrainNodes == nil then
-	terrainNodes = {} --the track is made of nodes, each one with a position and rotation. This table will hold the indices of track nods that should have a skyscraper rendered at them (with some offset)
-	terrainOffsets = {}
-	terrainOffsetsR = {}
-	terrainRotsR = {}
-	--offsets = {}
-	--buildingNodesToo = {}
-	--offsetsToo = {}
-	for i=1,#track do
-		if i%2==0 then
-			terrainNodes[#terrainNodes+1] = i
-			terrainOffsets[#terrainOffsets+1] = {-trackWidth,0,0}
-			terrainOffsetsR[#terrainOffsetsR+1] = {trackWidth,0,0}
-			terrainRotsR[#terrainRotsR+1] = {0,180,0}
-			--local xOffset = 150 + 1650*math.random()
-			--if math.random() > 0.5 then xOffset = xOffset * -1 end
-			--offsets[#offsets+1] = {xOffset,-100,0}
+
+	if terrainNodes == nil then
+		terrainNodes = {} --the track is made of nodes, each one with a position and rotation. This table will hold the indices of track nods that should have a skyscraper rendered at them (with some offset)
+		terrainOffsets = {}
+		terrainOffsetsR = {}
+		terrainRotsR = {}
+		--offsets = {}
+		--buildingNodesToo = {}
+		--offsetsToo = {}
+		for i=1,#track do
+			if i%2==0 then
+				terrainNodes[#terrainNodes+1] = i
+				terrainOffsets[#terrainOffsets+1] = {-trackWidth,0,0}
+				terrainOffsetsR[#terrainOffsetsR+1] = {trackWidth,0,0}
+				terrainRotsR[#terrainRotsR+1] = {0,180,0}
+				--local xOffset = 150 + 1650*math.random()
+				--if math.random() > 0.5 then xOffset = xOffset * -1 end
+				--offsets[#offsets+1] = {xOffset,-100,0}
+			end
 		end
+
+		BatchRenderEveryFrame{prefabName="SideBoxCloneMe", --tell the game to render these prefabs in a batch (with Graphics.DrawMesh) every frame
+								locations=terrainNodes,
+								offsets = terrainOffsets,
+								rotateWithTrack=true,
+								maxShown=1000,
+								colors = "nodecolor", -- objects are rendered by the color of the highway node they're set to
+								--maxDistanceShown=20000,
+								--offsets=offsets,
+								--collisionLayer = 1,--will collision test with other batch-rendered objects on the same layer. set less than 0 for no other-object collision testing
+								testAndHideIfCollideWithTrack=false --if true, it checks each render location against a ray down the center of the track for collision. Any hits are not rendered
+							}
+
+		BatchRenderEveryFrame{prefabName="SideBoxCloneMe", --tell the game to render these prefabs in a batch (with Graphics.DrawMesh) every frame
+								locations=terrainNodes,
+								offsets = terrainOffsetsR,
+								rotations = terrainRotsR,
+								rotateWithTrack=true,
+								maxShown=1000,
+								colors = "nodecolor", -- objects are rendered by the color of the highway node they're set to
+								--maxDistanceShown=20000,
+								--offsets=offsets,
+								--collisionLayer = 1,--will collision test with other batch-rendered objects on the same layer. set less than 0 for no other-object collision testing
+								testAndHideIfCollideWithTrack=false --if true, it checks each render location against a ray down the center of the track for collision. Any hits are not rendered
+							}
 	end
-
-	BatchRenderEveryFrame{prefabName="SideBoxCloneMe", --tell the game to render these prefabs in a batch (with Graphics.DrawMesh) every frame
-							locations=terrainNodes,
-							offsets = terrainOffsets,
-                    		rotateWithTrack=true,
-                    		maxShown=1000,
-                    		colors = "nodecolor", -- objects are rendered by the color of the highway node they're set to
-                    		--maxDistanceShown=20000,
-							--offsets=offsets,
-							--collisionLayer = 1,--will collision test with other batch-rendered objects on the same layer. set less than 0 for no other-object collision testing
-							testAndHideIfCollideWithTrack=false --if true, it checks each render location against a ray down the center of the track for collision. Any hits are not rendered
-						}
-
-	BatchRenderEveryFrame{prefabName="SideBoxCloneMe", --tell the game to render these prefabs in a batch (with Graphics.DrawMesh) every frame
-							locations=terrainNodes,
-							offsets = terrainOffsetsR,
-							rotations = terrainRotsR,
-                    		rotateWithTrack=true,
-                    		maxShown=1000,
-                    		colors = "nodecolor", -- objects are rendered by the color of the highway node they're set to
-                    		--maxDistanceShown=20000,
-							--offsets=offsets,
-							--collisionLayer = 1,--will collision test with other batch-rendered objects on the same layer. set less than 0 for no other-object collision testing
-							testAndHideIfCollideWithTrack=false --if true, it checks each render location against a ray down the center of the track for collision. Any hits are not rendered
-						}
 end
 
 print("Track nodes: " .. #track)
@@ -1147,7 +1162,7 @@ function Update(dt, trackLocation, playerStrafe, playerJumpHeight, intensity)
 		UpdateShaderSettings{material=shipMaterial, shadersettings={_GlowScaler=enginePower}}
 	end
 end
-end
+
 --[[
 CreateObject{ --creates a uniquely named prototype (prefab) that can be used later in the script or by the mod script. The audiosprint mod uses prototypes created in it's skin script
 	name="SpriteTest",
