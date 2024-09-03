@@ -226,7 +226,7 @@ else
 
 		shipMaterial = BuildMaterial{
 			renderqueue = 2000,
-			shader="UnlitTintedTexGlowWire",
+			--shader="UnlitTintedTexGlowWire",
 			shader = "MatCap/Vertex/PlainBrightGlow",
 			shadersettings={_GlowScaler=9, _Brightness=.66},
 			shadercolors={
@@ -418,6 +418,8 @@ squareMesh = BuildMesh{
 				meshes={"squaremorph_baseline.obj", "squaremorph0.obj", "squaremorph1.obj", "squaremorph2.obj", "squaremorph3.obj", "squaremorph4.obj"}
 			}
 
+customunlitedgedblock = AssetBundles.hyperdriveproject:LoadAsset('Assets/Shaders/UnlitEdgedBlock2.shader')
+
 if not jumping then
 	SetBlocks{
 		maxvisiblecount = 200, -- fif(skinvars.minvisibleblocks, math.max(200, skinvars.minvisibleblocks), 200),
@@ -425,10 +427,10 @@ if not jumping then
 			mesh = "DBN_assets/block3.obj", --  ballMesh, --"DoubleLozenge.obj",
 			--shader = fif(hifi,"MatCap/Vertex/Textured Lit Double Mult", "MatCap/Vertex/PlainBright"),
 			--shader = "MatCap/Vertex/PlainBright", -- "MatCap/Vertex/PlainBrightWire",
-			shader = "UnlitEdgedBlock",
+			shader = customunlitedgedblock,
 				shadercolors = {
 					--_Color = {1,1,1,1},
-					_Color = {colorsource={1,1,1,1}, scaletype="intensity", minscaler=1, maxscaler=1},
+					_Color = {colorsource={1,1,1,1}, scaletype="intensity", minscaler=4, maxscaler=4},
 					_Brightness = 1,
 					_AlphaGlowTint = 2/3,
 					_RimColor = {1,1,1,1},

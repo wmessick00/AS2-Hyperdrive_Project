@@ -1,0 +1,7 @@
+ManifestFileVersion: 0
+CRC: 247981177
+AssetBundleManifest:
+  AssetBundleInfos:
+    Info_0:
+      Name: hyperdriveproject
+      Dependencies: {}
