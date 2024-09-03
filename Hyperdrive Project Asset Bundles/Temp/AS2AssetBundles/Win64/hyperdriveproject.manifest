@@ -1,0 +1,33 @@
+ManifestFileVersion: 0
+CRC: 2643860148
+Hashes:
+  AssetFileHash:
+    serializedVersion: 2
+    Hash: df666d8ace6d1bc86b46778652b3cf74
+  TypeTreeHash:
+    serializedVersion: 2
+    Hash: 6370d3f9de9eca57f523bce048404a46
+HashAppended: 0
+ClassTypes:
+- Class: 48
+  Script: {instanceID: 0}
+Assets:
+- Assets/Extras/Shaders/thegridSky_2.shader
+- Assets/Extras/Shaders/thegridSky.shader
+- Assets/DBN_assets/Shaders/block_frontlight.shader
+- Assets/Extras/Shaders/UnlitEdgedBlock.shader
+- Assets/Extras/Shaders/thegrid.shader
+- Assets/Extras/Shaders/MatCap_PlainBrightWireGrey.shader
+- Assets/DBN_assets/Shaders/IlluminDiffuse_B.shader
+- Assets/Extras/Shaders/rimlight.shader
+- Assets/DBN_assets/Shaders/Block.shader
+- Assets/DBN_assets/Shaders/block_ppglow.shader
+- Assets/DBN_assets/Shaders/VertexColorUnlitTintedAlpha.shader
+- Assets/DBN_assets/Shaders/block_rimlight_intensity.shader
+- Assets/Extras/Shaders/SelfGlowBumpSpec2_compiled.shader
+- Assets/DBN_assets/Shaders/block_solid.shader
+- Assets/Extras/Shaders/thegridSky_1.shader
+- Assets/DBN_assets/Shaders/Block_AlphaGlow.shader
+- Assets/DBN_assets/Shaders/block_rimlight.shader
+- Assets/Shaders/UnlitEdgedBlock_White.shader
+Dependencies: []

@@ -13,7 +13,7 @@ ghost_ship_setting = true -- true for ghost ship, false for solid ship
 
 --   LOAD ASSETS   --
 customillumindiffuse = AssetBundles.hyperdriveproject:LoadAsset('Assets/DBN_Assets/IlluminDiffuse_B.shader')
-customunlitedgedblock = AssetBundles.hyperdriveproject:LoadAsset('Assets/Shaders/UnlitEdgedBlock2.shader')
+customunlitedgedblock = AssetBundles.hyperdriveproject:LoadAsset('Assets/Shaders/UnlitEdgedBlock_White.shader')
 --END ASSET LOADING--
 
 jumping = PlayerCanJump()
@@ -96,8 +96,8 @@ SetScene{
 	radialblur_strength = 2,
 	watertype = 1,
 	water = jumping, --only use the water cubes in wakeboard mode
-	--watertint = {r=255,g=255,b=255,a=11},
-	watertint = {r=255,g=255,b=255,a=255},
+	watertint = {r=255,g=255,b=255,a=22},
+	--watertint = {r=255,g=255,b=255,a=255},
 	--watertint_highway = true,
 	--watertexture = "WaterCubesBlue_BlackTop_WhiteLowerTier.png",--waterBW.png",
 	watertexture = "WaterCubesBlue_BlackTop_WhiteLowerTier.png",
@@ -220,23 +220,9 @@ else
 		--scale={x=.75, y=.75, z=.75},
 
 		mesh = shipMesh,--built with BuildMesh above
-		--materials = {shipMaterial}, --assign the pre-created material
 		material = shipMaterial,
 		reflect = false,
-		--mesh="racingship.obj",
-		--calculateTangents = true,
-		--calculateNormals = false,
-		--submeshesWhenCombining = false,
 		layer = 15,
---			renderqueue = 2000,
---			shader="SelfGlowBumpSpec2_compiled.shader",
---			shadersettings={_Shininess=0.1, _GlowScaler=9},
---			shadercolors={
---				_Color = {colorsource="highwayinverted", scaletype="intensity", minscaler=1, maxscaler=1},
---				_SpecColor = {colorsource="highway", scaletype="intensity", minscaler=1, maxscaler=1},
---				_GlowColor = {colorsource="highway", scaletype="intensity", minscaler=1, maxscaler=1}
---				},
---			textures={_MainTex="maintex_darkerNeg170_highlights.png", _BumpMap="normal.png", _Glow="glowBW.png"},
 		scale = {x=1,y=1,z=1},
 		thrusters = {crossSectionShape={{-.35,-.35,0},{-.5,0,0},{-.35,.35,0},{0,.5,0},{.35,.35,0},{.5,0,0},{.35,-.35,0}},
 					perShapeNodeColorScalers={.5,1,1,1,1,1,.5},
@@ -442,7 +428,7 @@ starMesh = BuildMesh{
 				recalculateNormalsEveryFrame=true,
 				splitVertices = true,
 				barycentricTangents = true,
-				meshes={"hexsphere/hexx_baseline.obj", "hexsphere/hexx4.obj", "hexsphere/hexx01.obj", "hexsphere/hexx02.obj", "hexsphere/hexx03.obj"}
+				meshes={"HexSphere/hexx_baseline.obj", "HexSphere/hexx04.obj", "HexSphere/hexx01.obj", "HexSphere/hexx02.obj", "HexSphere/hexx03.obj"}
 			}	
 			
 spikeMesh = BuildMesh{
@@ -456,19 +442,17 @@ pyrtopMesh = BuildMesh{
 				recalculateNormalsEveryFrame=true,
 				splitVertices = false,
 				barycentricTangents = true,
-				--meshes={"pyramidtop.obj", "pyramidtop.obj", "pyramidtop.obj", "pyramidtop.obj", "pyramidtop.obj", "pyramidtop.obj"}
-				meshes={"Pyramids/pyramidtop.obj", "Pyramids/pyramidtop.obj"}
+				mesh="Pyramids/pyramidtop.obj",
 			}
 
 pyrbotMesh = BuildMesh{
 				recalculateNormalsEveryFrame=true,
 				splitVertices = false,
 				barycentricTangents = true,
-				--meshes={"pyramidbot.obj", "pyramidbot.obj", "pyramidbot.obj", "pyramidbot.obj", "pyramidbot.obj", "pyramidbot.obj"}
-				meshes={"Pyramids/pyramidbot.obj", "Pyramids/pyramidbot.obj"}
+				mesh="Pyramids/pyramidbot.obj",
 			}
 
-if not jumping then
+--if not jumping then
 	SetBlocks{
 		maxvisiblecount = 200, -- fif(skinvars.minvisibleblocks, math.max(200, skinvars.minvisibleblocks), 200),
 		colorblocks={
@@ -507,7 +491,7 @@ if not jumping then
 			powerpellet={
 			mesh = starMesh,
 				shader = "RimLight",
-				textures={_MainTex="hexsphere/hexx_Color_4.png", _BumpMap="hexsphere/hexx_Normal_4.png", _MatCap="matcapchrome.jpg", _Glow="hexsphere/hexx_Color_4.png"},
+				textures={_MainTex="HexSphere/hexx_Color_4.png", _BumpMap="HexSphere/hexx_Normal_4.png", _MatCap="matcapchrome.jpg", _Glow="HexSphere/hexx_Color_4.png"},
 				--shadersettings = {_Outter=.1,_Inner = 5},
 				shadersettings = fif(hifi, {_Brightness=10}, {_Brightness=5}),
 			shadercolors={
@@ -526,7 +510,7 @@ if not jumping then
 		}
 
 	}
-end
+--end
 
 SetPuzzleGraphics{
 	usesublayerclone = false,
@@ -543,7 +527,7 @@ SetRings{ --setup the tracks tunnel rings. the airtexture is the tunnel used whe
 	percentringed=.2,--ifhifi(2,.01),-- .2,
 	airtexture="ringOnTop_2.png",
 	airshader="VertexColorUnlitTintedAddSmooth",
-	airsize=24,
+	airsize=28,
 	colorsource="highway", scaletype="intensity", minscaler=1, maxscaler=2
 }
 
@@ -641,7 +625,7 @@ CreateObject{
 			_Color = {colorsource="highway", scaletype="intensity", minscaler=1, maxscaler=6},
 			_RimColor={255,255,255}
 		},
-		textures={_MainTex="hexsphere/hexx_Color_5.png", _BumpMap="hexsphere/hexx_Normal_5.png", _MatCap="matcapchrome.jpg", _Glow="hexsphere/hexx_Color_1.png"},
+		textures={_MainTex="HexSphere/hexx_Color_5.png", _BumpMap="HexSphere/hexx_Normal_5.png", _MatCap="matcapchrome.jpg", _Glow="HexSphere/hexx_Color_1.png"},
 		--texturewrap = "clamp",
 		scale = {x=3,y=3,z=3},
 	}
@@ -981,7 +965,7 @@ if not jumping then
 	end
 end
 
-if jumping then
+--[[ if jumping then
 	CreateRail{--left rail
 		positionOffset={
 			x=-trackWidth,
@@ -1023,7 +1007,7 @@ if jumping then
 		texture="cliffRails.png",
 		shader="CliffRail"
 	}
-end
+end ]]
 
 --------------------------------------------------
 
