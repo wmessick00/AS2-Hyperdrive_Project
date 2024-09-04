@@ -6,7 +6,7 @@
 ]]
 
 --  USER SETTINGS  --
-palette_setting = 0 -- 0 = random, 1-8 for specific palette, else for Album Art
+palette_setting = 0 -- 0 = random, 1-8 for specific palette, any other integer for Album Art
 grid_setting = 1 -- 0 = random, 1-2 for specific shader
 ghost_ship_setting = true -- true for ghost ship, false for solid ship
 --END USER SETTINGS--
@@ -97,7 +97,6 @@ SetScene{
 	watertype = 1,
 	water = jumping, --only use the water cubes in wakeboard mode
 	watertint = {r=255,g=255,b=255,a=22},
-	--watertint = {r=255,g=255,b=255,a=255},
 	--watertint_highway = true,
 	--watertexture = "WaterCubesBlue_BlackTop_WhiteLowerTier.png",--waterBW.png",
 	watertexture = "WaterCubesBlue_BlackTop_WhiteLowerTier.png",
@@ -401,18 +400,33 @@ if skinvars.colorcount > 5 then
 	}
 end
 
-if palette_setting >= 1 and palette_setting <= 8 then
-	track_colors_index = palette_setting
+if palette_setting >= 0 and palette_setting <= 8 then
+	if palette_setting >= 1 then
+		track_colors_index = palette_setting
+	else
+		track_colors_index = math.random(#track_colors_choices)
+	end
+
+	track_colors = track_colors_choices[track_colors_index]
+	SetTrackColors(track_colors)
+	palette_names = {"Waltz", "Burning Skies", "Nova", "Inferno", "Galaxy", "Magic", "Adrenalin"}
+	palette_index = palette_names[track_colors_index]
+	print("                                        " .. palette_index)
+	print("Random Track Color Palette: #" .. track_colors_index)
 else
-	track_colors_index = math.random(#track_colors_choices)
+	ezio = GetAlbumArtPalette{mincount=3, maxcount=6}
+	SetTrackColors(ezio)
+	i=1
+	while(i<=#ezio)do
+		for key,value in pairs(ezio[i]) do 
+		formattedKey = "%s = %d"
+		print(string.format(formattedKey, string.upper(key), value*255))
+		end
+	print("\n")
+	i=i+1
+	end
 end
-track_colors = track_colors_choices[track_colors_index]
-SetTrackColors(track_colors)
-palette_names = {"Waltz", "Burning Skies", "Nova", "Inferno", "Galaxy", "Magic", "Adrenalin"}
-palette_index = palette_names[track_colors_index]
--- [track_colors_index] can be replaced with [#] to force a color palette
-print("                                        " .. palette_index)
-print("Random Track Color Palette: #" .. track_colors_index)
+
 
 --]]
 --SetBlockColors{ --this is only used for puzzle modes (which you don't have yet) with multiple colors of blocks
@@ -809,24 +823,24 @@ function Update(dt, trackLocation, playerStrafe, playerJumpHeight, intensity)
 end
 
 if quality < 3 then
-CreateObject{--skywires, the red lines in the sky. A railed object is attached to the track and moves along it with the player.
-	railoffset=0,
-	floatonwaterwaves = false,
-	gameobject={
-		name="scriptSkyWires",
-		pos={x=0,y=0,z=0},
-		mesh="skywires.obj",
-		renderqueue=1000,
-		layer=ifhifi(18,13), -- in low detail the glow camera (layer 18) is disabled, so move the skywires to the main camera's layer (13)
-		shader="VertexColorUnlitTintedSkywire",
-		shadercolors={
-			_Color="highway" --{r=255,g=0,b=0}
-		},
-		texture="White.png",
-		scale = {x=1,y=1,z=1},
-		lookat = "end"
+	CreateObject{--skywires, the red lines in the sky. A railed object is attached to the track and moves along it with the player.
+		railoffset=0,
+		floatonwaterwaves = false,
+		gameobject={
+			name="scriptSkyWires",
+			pos={x=0,y=0,z=0},
+			mesh="skywires.obj",
+			renderqueue=1000,
+			layer=ifhifi(18,13), -- in low detail the glow camera (layer 18) is disabled, so move the skywires to the main camera's layer (13)
+			shader="VertexColorUnlitTintedSkywire",
+			shadercolors={
+				_Color="highway" --{r=255,g=0,b=0}
+			},
+			texture="White.png",
+			scale = {x=1,y=1,z=1},
+			lookat = "end"
+		}
 	}
-}
 end
 
 --RAILS. rails are the bulk of the graphics in audiosurf. Each one is a 2D shape extruded down the length of the track.
