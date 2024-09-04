@@ -99,7 +99,7 @@ SetScene{
 	watertint = {r=255,g=255,b=255,a=22},
 	--watertint_highway = true,
 	--watertexture = "WaterCubesBlue_BlackTop_WhiteLowerTier.png",--waterBW.png",
-	watertexture = "WaterCubesBlue_BlackTop_WhiteLowerTier.png",
+	watertexture = "Dylan_assets/WaterCubesBlue_BlackTop_WhiteLowerTier.png",
 	widewater = false, --sets water to 16.25 width
 	towropes = jumping,--use the tow ropes if jumping
 	airdebris_count = 1500,
@@ -154,7 +154,7 @@ if jumping then
 					_Color={colorsource="highway", scaletype="intensity", minscaler=3, maxscaler=6, param="_Threshold", paramMin=2, paramMax=2},
 					_RimColor={0,63,192}
 				},
-				texture="FullLeftArm_1024_wAO.png"
+				texture="Dylan_assets/FullLeftArm_1024_wAO.png"
 			},
 			board={
 				--mesh="wakeboard.obj",
@@ -167,7 +167,7 @@ if jumping then
 				shadersettings={
 					_Threshold=11
 				},
-				texture="board_internalOutline.png"
+				texture="Dylan_assets/board_internalOutline.png"
 			},
 			body={
 				--mesh="surferbot.obj",
@@ -180,13 +180,13 @@ if jumping then
 				shadersettings={
 					_Threshold=1.7
 				},
-				texture="robot_HighContrast.png"
+				texture="Dylan_assets/robot_HighContrast.png"
 			}
 		}
 	}
 else
 	local shipMesh = BuildMesh{
-		mesh="racingship_scaled75.obj",
+		mesh="Dylan_assets/racingship_scaled75.obj",
 		--mesh="ninjamono.obj",
 		barycentricTangents = true, --for use with wireframe shaders
 		--calculateTangents = true,
@@ -205,7 +205,7 @@ else
 			_SpecColor = fif(ghost_ship_setting,{colorsource="highway", scaletype="intensity", minscaler=1, maxscaler=2},nil),
 			_GlowColor = {colorsource="highway", scaletype="intensity", minscaler=1, maxscaler=2},
 			},
-		textures = fif(ghost_ship_setting,{_MatCap="matcapchrome.jpg", _Glow="maintex_darkerNeg170_highlights.png"},{_MatCap="matcapchrome.jpg", _Glow="glowBWj1.png"}),
+		textures = fif(ghost_ship_setting,{_MatCap="matcapchrome.jpg", _Glow="Dylan_assets/maintex_darkerNeg170_highlights.png"},{_MatCap="matcapchrome.jpg", _Glow="Dylan_assets/glowBWj1.png"}),
 	}
 
 	vehicleTable={
@@ -449,7 +449,7 @@ spikeMesh = BuildMesh{
 				recalculateNormalsEveryFrame=true,
 				splitVertices = true,
 				barycentricTangents = true,
-				meshes={"wallmorph_baseline.obj", "wallmorph0.obj", "wallmorph1.obj", "wallmorph2.obj", "wallmorph3.obj", "wallmorph4.obj"}
+				meshes={"Dylan_assets/wallmorph_baseline.obj", "Dylan_assets/wallmorph0.obj", "Dylan_assets/wallmorph1.obj", "Dylan_assets/wallmorph2.obj", "Dylan_assets/wallmorph3.obj", "Dylan_assets/wallmorph4.obj"}
 			}
 
 pyrtopMesh = BuildMesh{
@@ -528,9 +528,9 @@ pyrbotMesh = BuildMesh{
 
 SetPuzzleGraphics{
 	usesublayerclone = false,
-	puzzlematchmaterial = {shader="VertexColorUnlitTintedAlpha",texture="tileMatchingBars.png"},
-	puzzleflyupmaterial = {shader="VertexColorUnlitTintedAddFlyup",texture="tileMatchingBars.png"},
-	puzzlematerial = {shader="VertexColorUnlitTintedAlpha2",texture="tilesSquare.png",texturewrap="clamp", usemipmaps="false",
+	puzzlematchmaterial = {shader="VertexColorUnlitTintedAlpha",texture="Dylan_assets/tileMatchingBars.png"},
+	puzzleflyupmaterial = {shader="VertexColorUnlitTintedAddFlyup",texture="Dylan_assets/tileMatchingBars.png"},
+	puzzlematerial = {shader="VertexColorUnlitTintedAlpha2",texture="Dylan_assets/tilesSquare.png",texturewrap="clamp", usemipmaps="false",
 	shadercolors={_Color = {colorsource={1,1,1,1}, scaletype="intensity", minscaler=1.0, maxscaler=1.5}}}
 }
 
@@ -566,7 +566,7 @@ CreateObject{
 	tracknode="end",
 	gameobject={
 		transform={pos={0,0,126},scale={scaletype="intensity",min={55,99,900},max={66,120,900}}},
-		mesh="danishCookie_boxes.obj",
+		mesh="Dylan_assets/danishCookie_boxes.obj",
 		shader="VertexColorUnlitTintedAdd",
 		shadercolors={
 			_Color="highway"
@@ -731,7 +731,7 @@ end
 if quality > 3 then
 	wireTerrainMesh = BuildMesh{
 					recalculateNormalsEveryFrame=false,
-					meshes={"sideboxb0.obj", "sideboxb1.obj", "sideboxb2.obj", "sideboxb3.obj", "sideboxb4.obj", "sideboxb5.obj"}
+					meshes={"Dylan_assets/sideboxb0.obj", "Dylan_assets/sideboxb1.obj", "Dylan_assets/sideboxb2.obj", "Dylan_assets/sideboxb3.obj", "Dylan_assets/sideboxb4.obj", "Dylan_assets/sideboxb5.obj"}
 				}
 
 	CreateObject{ --creates a uniquely named prototype (prefab) that can be used later in the script or by the mod script. The audiosprint mod uses prototypes created in it's skin script
@@ -829,7 +829,7 @@ if quality < 3 then
 		gameobject={
 			name="scriptSkyWires",
 			pos={x=0,y=0,z=0},
-			mesh="skywires.obj",
+			mesh="Dylan_assets/skywires.obj",
 			renderqueue=1000,
 			layer=ifhifi(18,13), -- in low detail the glow camera (layer 18) is disabled, so move the skywires to the main camera's layer (13)
 			shader="VertexColorUnlitTintedSkywire",
@@ -891,7 +891,7 @@ if jumping then
 		color = {r=255,g=255,b=255},
 		flatten=false,
 		wrapnodeshape = false,
-		texture="cliffRails.png",
+		texture="Dylan_assets/cliffRails.png",
 		fullfuture = true,--ifhifi(true,false),
 		stretch = 3,
 		calculatenormals = true,
