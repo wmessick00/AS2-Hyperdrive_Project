@@ -1,19 +1,23 @@
 --[[Credits:
-	Kiisseli - original ideas
-	DBN - DBN_assets, color palette randomizer, mod documentation, and addEntropy function
-	Epikas Jones - Original HexSphere mesh
-	Nova - Original Nova color palette
+	Kiisseli 		- original ideas
+	DBN 			- DBN_assets, color palette randomizer, mod documentation, and addEntropy function
+	Epikas Jones 	- Original HexSphere mesh
+	Nova 			- Original Nova color palette
 ]]
 
 --  USER SETTINGS  --
-palette_setting = 0 -- 0 = random, 1-8 for specific palette, any other integer for Album Art
-grid_setting = 1 -- 0 = random, 1-2 for specific shader
-ghost_ship_setting = true -- true for ghost ship, false for solid ship
+US_palette = 		0 	-- 0 = random, 1-8 = specific palette, 9 = Album Art
+US_SkyBox = 		1 	-- 0 = random, 1 = the grid, 2 = the grid sky
+US_ghost_ship = 	1 	-- 0 = random, 1 = ghost ship, 2 = solid ship
+US_highway_cookie = 1 	-- 0 = random, 1 = highway colors, 2 = white
+US_ship_cam = 		1 	-- 0 = chaos,  1 = modern camera, 2 = legacy camera, 3 = pulled back camera, 4 = dynamic camera
+US_wake_type = 		1	-- 0 = random, 1 = MODERN(1.9H - 0.965FR), 2 = LEGACY(1.5H - 0.99FR), 3 = ORIGINAL(3/2H - 1.0FR)
 --END USER SETTINGS--
+print(string.format("--  USER SETTINGS:  Palette = %d, SkyBox = %d, Ship = %d, End Cookie = %d, Camera = %d, Wake Type = %d  --", US_palette,US_SkyBox,US_ghost_ship,US_highway_cookie,US_ship_cam,US_wake_type))
 
 --   LOAD ASSETS   --
-customillumindiffuse = AssetBundles.hyperdriveproject:LoadAsset('Assets/DBN_Assets/IlluminDiffuse_B.shader')
-customunlitedgedblock = AssetBundles.hyperdriveproject:LoadAsset('Assets/Shaders/UnlitEdgedBlock_White.shader')
+LA_IlluminDiffuse_B = AssetBundles.hyperdriveproject:LoadAsset('Assets/DBN_Assets/IlluminDiffuse_B.shader')
+LA_unlitedgedblock_white = AssetBundles.hyperdriveproject:LoadAsset('Assets/Shaders/UnlitEdgedBlock_White.shader')
 --END ASSET LOADING--
 
 jumping = PlayerCanJump()
@@ -32,6 +36,19 @@ function ByQuality4(low,med,high,ultra)
 	elseif quality <3 then return med
 	elseif quality <4 then return high
 	else return ultra end
+end
+
+function get_value(test, ...)
+    local args = {...}  -- Collect all the passed arguments into a table
+    local num_args = #args  -- Get the total number of arguments passed
+
+    if test == 0 or test > num_args then
+        -- Return a random argument if test is 0 or out of range
+        local random_index = math.random(1, num_args)
+        return args[random_index]
+    else
+        return args[test]  -- Return the corresponding argument for valid test values
+    end
 end
 
 track = GetTrack()--get the track data from the game engine
@@ -197,15 +214,15 @@ else
 	shipMaterial = BuildMaterial{
 		renderqueue = 2000,
 		--shader="UnlitTintedTexGlowWire",
-		shader = fif(ghost_ship_setting,"VertexColorUnlitTintedAddSmooth","MatCap/Vertex/PlainBrightGlow"),
+		shader = get_value(US_ghost_ship,"VertexColorUnlitTintedAddSmooth","MatCap/Vertex/PlainBrightGlow"),
 		--shader = "MatCap/Vertex/PlainBrightGlow",
 		shadersettings={_GlowScaler=9, _Brightness=.66},
 		shadercolors={
-			_Color = fif(ghost_ship_setting,{100,100,100},{colorsource="highwayinverted", scaletype="intensity", minscaler=1, maxscaler=1}),
-			_SpecColor = fif(ghost_ship_setting,{colorsource="highway", scaletype="intensity", minscaler=1, maxscaler=2},nil),
+			_Color = get_value(US_ghost_ship,{100,100,100},{colorsource="highwayinverted", scaletype="intensity", minscaler=1, maxscaler=1}),
+			_SpecColor = get_value(US_ghost_ship,{colorsource="highway", scaletype="intensity", minscaler=1, maxscaler=2},nil),
 			_GlowColor = {colorsource="highway", scaletype="intensity", minscaler=1, maxscaler=2},
 			},
-		textures = fif(ghost_ship_setting,{_MatCap="matcapchrome.jpg", _Glow="Dylan_assets/maintex_darkerNeg170_highlights.png"},{_MatCap="matcapchrome.jpg", _Glow="Dylan_assets/glowBWj1.png"}),
+		textures = get_value(US_ghost_ship,{_MatCap="matcapchrome.jpg", _Glow="Dylan_assets/maintex_darkerNeg170_highlights.png"},{_MatCap="matcapchrome.jpg", _Glow="Dylan_assets/glowBWj1.png"}),
 	}
 
 	vehicleTable={
@@ -253,17 +270,17 @@ else
 		--showboard = false,
 		cameramode = "third",
 	--	cameramode_air = "first",--"first_jumptrickthird", --start in first, go to third for jumps and tricks
-
+		cameradynamics = get_value(US_ship_cam,null,null,null,"high"),
 		camfirst={
 			pos={0,1.84,-0.8},
 			rot={20,0,0}},
 		camthird={
-			pos={0,2.5,-1.5},								--[0 2 -0.5]
-			rot={22,0,0},								--[30 0 0]
-			strafefactor = .77,							--[.75]
-			pos2={0,5,-4},								--[0 5 -4] 
-			rot2={30,0,0},								--[30 0 0]
-			strafefactorFar = 1,
+			pos=				get_value(US_ship_cam,{0,2.5,-1.5},	{0,2,-.5},	{0,4.4,-4},	{0,2,-.5}),						--[0 2 -0.5]
+			rot=				get_value(US_ship_cam,{22,0,0},		{30,0,0},	{24,0,0},	{30,0,0}),						--[30 0 0]
+			strafefactor = 		get_value(US_ship_cam,.77,			.75,		.75,		.5),							--[.75]
+			pos2=				get_value(US_ship_cam,{0,5,-4},		{0,5,-4},	{0,4,-4},	{0,5,-4}),						--[0 5 -4] 
+			rot2=				get_value(US_ship_cam,{30,0,0},		{30,0,0},	{30,0,0},	{30,0,0}),						--[30 0 0]
+			strafefactorFar = 	get_value(US_ship_cam,1,			1,			1,			1),
 			transitionspeed = 1,
 			puzzleoffset=-0.65,
 			puzzleoffset2=-1.5},
@@ -271,15 +288,8 @@ else
 	}
 end
 
-if grid_setting ~= 1 and grid_setting ~= 2 then 
-	grid_setting = math.random(1,2)
-end
-function skybox_chooser(setting1, setting2) 
-	if grid_setting == 1 then return setting1
-	elseif grid_setting == 2 then return setting2 end
-end
 if hifi then SetSkybox{
-		skyscreen = skybox_chooser("Skyscreen/TheGrid","Skyscreen/TheGridSky"),
+		skyscreen = get_value(US_SkyBox,"Skyscreen/TheGrid","Skyscreen/TheGridSky"),
 		layer=18
 	}
 end
@@ -400,9 +410,9 @@ if skinvars.colorcount > 5 then
 	}
 end
 
-if palette_setting >= 0 and palette_setting <= 8 then
-	if palette_setting >= 1 then
-		track_colors_index = palette_setting
+if US_palette >= 0 and US_palette <= 8 then
+	if US_palette >= 1 then
+		track_colors_index = US_palette
 	else
 		track_colors_index = math.random(#track_colors_choices)
 	end
@@ -471,7 +481,7 @@ pyrbotMesh = BuildMesh{
 		maxvisiblecount = 200, -- fif(skinvars.minvisibleblocks, math.max(200, skinvars.minvisibleblocks), 200),
 		colorblocks={
 			mesh = "DBN_assets/block3.obj",
-			shader = customunlitedgedblock,
+			shader = LA_unlitedgedblock_white,
 				shadercolors = {
 					_Color = {colorsource={1,1,1,1}, scaletype="intensity", minscaler=4, maxscaler=4},
 					_Brightness = 1,
@@ -545,14 +555,13 @@ SetRings{ --setup the tracks tunnel rings. the airtexture is the tunnel used whe
 	colorsource="highway", scaletype="intensity", minscaler=1, maxscaler=2
 }
 
-if jumping then wakeHeight=(ifhifi(4,2)) else wakeHeight = 1.9 end
---wakeHeight=1.9 --(ifhifi(4,2))
+if jumping then wakeHeight=(ifhifi(4,2)) else wakeHeight = get_value(US_wake_type,1.9,1.5,ifhifi(3,2)) end
 extraWidth = trackWidth - 5
 if jumping then extraWidth = 0 end
 wakeStrafe = 7.5 + extraWidth
 SetWake{ --setup the spray coming from the two pulling "boats"
 	height = wakeHeight,
-	fallrate = 0.965,
+	fallrate = get_value(US_wake_type,0.965,0.99,1.0),
 	offsets = {{wakeStrafe,0,0}, {-wakeStrafe,0,0}},
 	--strafe = wakeStrafe,
 	shader = "VertexColorUnlitTintedAddSmooth",
@@ -569,7 +578,7 @@ CreateObject{
 		mesh="Dylan_assets/danishCookie_boxes.obj",
 		shader="VertexColorUnlitTintedAdd",
 		shadercolors={
-			_Color="highway"
+			_Color=get_value(US_highway_cookie,"highway",{.5,.5,.5,.5})
 		}
 	}
 }
@@ -589,7 +598,7 @@ pyrbotRotationSpeeds_Zone = {}
 
 for i=1,#track do
 	--if not track[i].funkyrot then -- don't place structures at loop/corkscrew nodes (not sure if necessary for these objects)
-		if i%300 == 0 then
+		if i%500 == 0 then
 			hexNodes_Zone[#hexNodes_Zone+1] = i
 			local xOffset = 1500 + math.random(0,3) * 7500
 			if math.random() > 0.5 then xOffset = xOffset * -1 end
@@ -649,11 +658,11 @@ BatchRenderEveryFrame{
 	prefabName="HexSphere",
 	locations=hexNodes_Zone,
 	rotateWithTrack=false,
-	maxShown=50,
-	maxDistanceShown=15000,
+	maxShown=30,
+	maxDistanceShown=15500,
 	rotationspeeds = hexRotationSpeeds_Zone,
 	offsets=hexOffsets_Zone,
-	collisionLayer = -2,
+	collisionLayer = -1,
 	testAndHideIfCollideWithTrack=true
 }
 end
