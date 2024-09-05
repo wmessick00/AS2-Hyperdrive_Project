@@ -1,4 +1,24 @@
---[[Most of this code was not done by me. The base code was used from Rainbowish by Kiisseli with some colour pallet edits as well as changes to wakes done solely by me. Parts that were not in either of those were based off of code from other skins and/or were edited by me or Kiisseli. The only credit I should get is the idea of making this and bringing it all together.]]
+--[[Credits:
+	Kiisseli 		- original ideas
+	DBN 			- DBN_assets, color palette randomizer, mod documentation, and addEntropy code block
+	Epikas Jones 	- Original HexSphere mesh
+	Nova 			- Original Nova color palette
+]]
+
+--  USER SETTINGS  --
+US_palette = 		0 	-- 0 = random, 1-8 = specific palette, 9 = Album Art
+US_SkyBox = 		0 	-- 0 = random, 1 = the grid, 2 = the grid sky
+US_ghost_ship = 	2 	-- 0 = random, 1 = ghost ship, 2 = solid ship
+US_end_cookie = 	2 	-- 0 = random, 1 = highway colors, 2 = white
+US_ship_cam = 		1 	-- 0 = chaos,  1 = modern camera, 2 = legacy camera, 3 = pulled back camera, 4 = dynamic camera
+US_wake_type = 		1	-- 0 = random, 1 = MODERN(1.9H - 0.965FR), 2 = LEGACY(1.5H - 0.99FR), 3 = ORIGINAL(3/2H - 1.0FR)
+--END USER SETTINGS--
+print(string.format("--  USER SETTINGS:  Palette = %d, SkyBox = %d, Ship = %d, End Cookie = %d, Camera = %d, Wake Type = %d  --", US_palette,US_SkyBox,US_ghost_ship,US_end_cookie,US_ship_cam,US_wake_type))
+
+--   LOAD ASSETS   --
+LA_IlluminDiffuse_B = AssetBundles.hyperdriveproject:LoadAsset('Assets/DBN_Assets/Shaders/IlluminDiffuse_B.shader')
+LA_unlitedgedblock_white = AssetBundles.hyperdriveproject:LoadAsset('Assets/Shaders/UnlitEdgedBlock_White.shader')
+--END ASSET LOADING--
 
 jumping = PlayerCanJump()
 function fif(test, if_true, if_false)
@@ -18,25 +38,171 @@ function ByQuality4(low,med,high,ultra)
 	else return ultra end
 end
 
+function get_value(test, ...)
+    local args = {...}  -- Collect all the passed arguments into a table
+    local num_args = #args  -- Get the total number of arguments passed
+
+    if test == 0 or test > num_args then
+        -- Return a random argument if test is 0 or out of range
+        local random_index = math.random(1, num_args)
+        return args[random_index]
+    else
+        return args[test]  -- Return the corresponding argument for valid test values
+    end
+end
+
 track = GetTrack()--get the track data from the game engine
+white = {1, 1, 1}
+function greyscale(amount, alpha) return {amount,amount,amount,alpha} end -- can omit alpha
+
 skinvars = GetSkinProperties()
 trackWidth = skinvars["trackwidth"]
 --trackWidth = 11.5 -- uses a wide water track even for vehicles
 fullsteep = jumping or skinvars.prefersteep
 
+do
+	local entropy = math.random(9000000) -- keep the song-based entropy AS2 is giving us
+
+	local function addEntropy(seed)
+			if seed == nil then
+					seed = math.random(9000000)
+			elseif type(seed) ~= "number" then
+					if type(seed) ~= "string" then seed = tostring(seed) end -- for functions and tables this will use their raw memory address for entropy
+					if seed == "" then seed = "12" end
+					local numbers = {string.byte(seed, 1, #seed)}
+					seed = 0
+					for i=1,#numbers do seed = seed + numbers[i] end
+			end
+			entropy = entropy + seed
+	end
+
+	-- if only it were that easy!
+	if type(os) == "table" and type(os.time) == "function" then
+			addEntropy(os.time())
+	end
+
+	-- this is fun, finding things to throw into the shredder
+	addEntropy(collectgarbage("count") * 1024)
+	addEntropy({})
+	addEntropy(addEntropy)
+	addEntropy(BatchRenderEveryFrame)
+	local skinvars = GetSkinProperties()
+	addEntropy(skinvars)
+	for k, v in pairs(skinvars) do
+			addEntropy(k)
+			addEntropy(v)
+			if type(v) == "table" then
+					local success, result = pcall(table.concat, v)
+					addEntropy(result)
+			end
+	end
+
+	-- "math.randomseed will call the underlying C function srand which takes an unsigned integer value"
+	local UINT_MAX = 4294967295
+	while entropy > UINT_MAX do entropy = entropy - UINT_MAX end
+	while entropy < 0 do entropy = entropy + UINT_MAX end
+
+	print("rng seed: " .. entropy)
+	math.randomseed(entropy)
+end
+
+track_colors_choices = {
+{
+	{r=0, g=0, b=0},
+	{r=0, g=0, b=0},
+	{r=148,g=0,b=211}, --magenta
+	{r=25, g=25, b=112}, --dark violet
+	{r=34, g=139, b=34}, --emerald green
+	--{r=237, g=247, b=65}, --lemon
+	{255,195,35}, --mango
+	--{255,165,30}, --orange
+	--{r=250,g=50,b=36}, --bright red
+	{220,20,20}, --crimson
+},
+{
+	{r=0, g=0, b=0},
+	{r=0, g=0, b=0},
+	{r=148,g=0,b=211}, --magenta
+	{r=25, g=25, b=112}, --dark violet
+	{r=34, g=139, b=34}, --emerald green
+	--{r=237, g=247, b=65}, --lemon
+	--{255,195,35}, --mango
+	{255,165,30}, --orange
+	{r=250,g=50,b=36}, --bright red
+	--{220,20,20}, --crimson
+},
+}
+
+blockColors = {}
+if skinvars.colorcount < 2 then
+	blockColors ={
+    {r=0, g=0, b=0},
+    {r=75, g=0, b=130},
+    {r=0, g=0, b=205},
+    {r=50, g=205, b=50},
+    {r=255, g=160, b=0},
+    {r=255,g=0,b=0}
+	}
+else
+	blockColors={
+    {r=0, g=0, b=0},
+    --{r=75, g=0, b=130},
+    --{r=0, g=0, b=205},
+    {r=50, g=205, b=50},
+    {r=255, g=160, b=0},
+    {r=255,g=0,b=0},
+	{r=255,g=255,b=255}
+	}
+end
+SetBlockColors(blockColors)
+
+if US_palette >= 0 and US_palette <= #track_colors_choices then
+	if US_palette >= 1 then
+		track_colors_index = US_palette
+	else
+		track_colors_index = math.random(#track_colors_choices)
+	end
+
+	track_colors = track_colors_choices[track_colors_index]
+	SetTrackColors(track_colors)
+	palette_names = {"Plaette #1","Palette #2"}
+	palette_index = palette_names[track_colors_index]
+	print("                                        " .. palette_index)
+	print("Random Track Color Palette: #" .. track_colors_index)
+else
+	ezio = GetAlbumArtPalette{mincount=3, maxcount=6}
+	SetTrackColors(ezio)
+	i=1
+	while(i<=#ezio)do
+		for key,value in pairs(ezio[i]) do 
+		formattedKey = "%s = %d"
+		print(string.format(formattedKey, string.upper(key), value*255))
+		end
+	print("\n")
+	i=i+1
+	end
+end
+--]]
+--SetBlockColors{ --this is only used for puzzle modes (which you don't have yet) with multiple colors of blocks
+--    {r=93, g=8, b=132},
+--	{r=1.0, g=0.27, b=0.2},
+--    {r=0.047, g=0.5098, b=0.94},
+--    {r=1.0, g=0.85, b=0.4157},
+--	{r=0, g=0.29, b=0.08},
+--    {r=1,g=0,b=0}
+--}
+
 SetScene{
 	ambientlight = "highwayinverted",
 	glowpasses = ifhifi(4,1),
 	glowspread = ifhifi(1,0.5),
-	--radialblur_strength = ifhifi(1.85,0.5),
 	radialblur_strength = 2,
 	watertype = 1,
 	water = jumping, --only use the water cubes in wakeboard mode
-	--watertint = {r=255,g=255,b=255,a=11},
-	watertint = {r=255,g=255,b=255,a=255},
+	watertint = {r=255,g=255,b=255,a=22},
 	--watertint_highway = true,
 	--watertexture = "WaterCubesBlue_BlackTop_WhiteLowerTier.png",--waterBW.png",
-	watertexture = "WaterCubesBlue_BlackTop_WhiteLowerTier.png",
+	watertexture = "Dylan_assets/WaterCubesBlue_BlackTop_WhiteLowerTier.png",
 	widewater = false, --sets water to 16.25 width
 	towropes = jumping,--use the tow ropes if jumping
 	airdebris_count = 1500,
@@ -91,18 +257,8 @@ if jumping then
 					_Color={colorsource="highway", scaletype="intensity", minscaler=3, maxscaler=6, param="_Threshold", paramMin=2, paramMax=2},
 					_RimColor={0,63,192}
 				},
-				texture="FullLeftArm_1024_wAO.png"
+				texture="Dylan_assets/FullLeftArm_1024_wAO.png"
 			},
-			--leg={
-			--	mesh="foot.obj",
-			--	shader="RimLightHatchedSurfer",
-			--	shadercolors={
-			--		_Color={colorsource="highway", scaletype="intensity", minscaler=3, maxscaler=6, param="_Threshold", paramMin=-1, paramMax=2},
-			--		_RimColor={0,49,242}
-			--		--_RimColor={colorsource="highway", scaletype="intensity", minscaler=3, maxscaler=3}
-			--	},
-			--	texture="foot.png"
-			--},
 			board={
 				--mesh="wakeboard.obj",
 				shader=ifhifi("RimLightHatchedSurferExternal","VertexColorUnlitTinted"), -- don't use the transparency shader in lofi mode. less fillrate needed that way
@@ -114,7 +270,7 @@ if jumping then
 				shadersettings={
 					_Threshold=11
 				},
-				texture="board_internalOutline.png"
+				texture="Dylan_assets/board_internalOutline.png"
 			},
 			body={
 				--mesh="surferbot.obj",
@@ -127,66 +283,48 @@ if jumping then
 				shadersettings={
 					_Threshold=1.7
 				},
-				texture="robot_HighContrast.png"
+				texture="Dylan_assets/robot_HighContrast.png"
 			}
 		}
 	}
 else
---[[
-	local vehicleTable = {}
-	local junShip = false
-	local junShipFrontWings = false
-	local skinnyfrontship = true
-	local skinnyfrontshiptop = false
-
 	local shipMesh = BuildMesh{
-		mesh="junship90.obj",
-		--calculateTangents = true,
+		mesh="Dylan_assets/racingship_scaled75.obj",
+		--mesh="ninjamono.obj",
 		barycentricTangents = true, --for use with wireframe shaders
-		calculateNormals = false,
+		--calculateTangents = true,
+		calculateNormals = true,
 		submeshesWhenCombining = false
 	}
 
 	shipMaterial = BuildMaterial{
 		renderqueue = 2000,
-		shader="UnlitTintedTexGlowWire",
-		shadersettings={_Shininess=0.1, _GlowScaler=9, _MainScaler=.7},
+		--shader="UnlitTintedTexGlowWire",
+		shader = get_value(US_ghost_ship,"VertexColorUnlitTintedAddSmooth","MatCap/Vertex/PlainBrightGlow"),
+		--shader = "MatCap/Vertex/PlainBrightGlow",
+		shadersettings={_GlowScaler=9, _Brightness=.66},
 		shadercolors={
-			_Color = {colorsource="highwayinverted", scaletype="intensity", minscaler=1, maxscaler=1},
-			_SpecColor = {colorsource="highway", scaletype="intensity", minscaler=1, maxscaler=1},
-			_GlowColor = {colorsource="highway", scaletype="intensity", minscaler=1, maxscaler=1}
+			_Color = get_value(US_ghost_ship,{100,100,100},{colorsource="highwayinverted", scaletype="intensity", minscaler=1, maxscaler=1}),
+			_SpecColor = get_value(US_ghost_ship,{colorsource="highway", scaletype="intensity", minscaler=1, maxscaler=2},nil),
+			_GlowColor = {colorsource="highway", scaletype="intensity", minscaler=1, maxscaler=2},
 			},
-		textures={_MainTex="maintex.png", _BumpMap="normal.png", _Glow="glowBW.png"}
+		textures = get_value(US_ghost_ship,{_MatCap="matcapchrome.jpg", _Glow="Dylan_assets/maintex_darkerNeg170_highlights.png"},{_MatCap="matcapchrome.jpg", _Glow="Dylan_assets/glowBWj1.png"}),
 	}
 
 	vehicleTable={
 		min_hover_height= 0.11,
 		max_hover_height = 1.4,
 		use_water_rooster = false,
-        smooth_tilting = false,
-        smooth_tilting_speed = 10,
-        smooth_tilting_max_offset = -20,
+		smooth_tilting = false,
+		smooth_tilting_speed = 10,
+		smooth_tilting_max_offset = -20,
 		pos={x=0,y=0,z=0},
 		--scale={x=.75, y=.75, z=.75},
 
 		mesh = shipMesh,--built with BuildMesh above
-		--materials = {shipMaterial}, --assign the pre-created material
 		material = shipMaterial,
 		reflect = false,
-		--mesh="racingship.obj",
-		--calculateTangents = true,
-		--calculateNormals = false,
-		--submeshesWhenCombining = false,
 		layer = 15,
---			renderqueue = 2000,
---			shader="SelfGlowBumpSpec2_compiled.shader",
---			shadersettings={_Shininess=0.1, _GlowScaler=9},
---			shadercolors={
---				_Color = {colorsource="highwayinverted", scaletype="intensity", minscaler=1, maxscaler=1},
---				_SpecColor = {colorsource="highway", scaletype="intensity", minscaler=1, maxscaler=1},
---				_GlowColor = {colorsource="highway", scaletype="intensity", minscaler=1, maxscaler=1}
---				},
---			textures={_MainTex="maintex_darkerNeg170_highlights.png", _BumpMap="normal.png", _Glow="glowBW.png"},
 		scale = {x=1,y=1,z=1},
 		thrusters = {crossSectionShape={{-.35,-.35,0},{-.5,0,0},{-.35,.35,0},{0,.5,0},{.35,.35,0},{.5,0,0},{.35,-.35,0}},
 					perShapeNodeColorScalers={.5,1,1,1,1,1,.5},
@@ -200,111 +338,35 @@ else
 					stretch=-0.1191,
 					updateseconds = 0.025,
 					instances={
-						{pos={0.03,0.49,-1.62},rot={0,0,0},scale={0.6,0.6,0.8}},
+						{pos={0.03,0.49,-1.62},rot={0,0,0},scale={0.6,0.6,0.6}},
 						{pos={0.03,0.49,-1.62},rot={0,0,0},scale={0.45,0.45,0.8}},
 						{pos={0.03,0.49,-1.62},rot={0,0,0},scale={0.3,0.3,0.8}},
 						{pos={0.03,0.49,-1.62},rot={0,0,0},scale={0.1,0.1,0.8}},
 
-						--rear sides
-						{pos={0.537,0.28,-1.64},rot={0,0,0},scale={0.3,0.3,0.66}},
-						{pos={0.537,0.28,-1.64},rot={0,0,0},scale={0.1,0.1,0.66}},
+						{pos={0.31,0.28,-1.64},rot={0,0,0},scale={0.3,0.3,0.66}},
+						{pos={0.31,0.28,-1.64},rot={0,0,0},scale={0.1,0.1,0.66}},
 
-						{pos={-0.472,0.28,-1.65},rot={0,0,0},scale={0.3,0.3,0.66}},
-						{pos={-0.472,0.28,-1.65},rot={0,0,0},scale={0.1,0.1,0.66}}
+						{pos={-0.25,0.28,-1.64},rot={0,0,0},scale={0.3,0.3,0.66}},
+						{pos={-0.25,0.28,-1.64},rot={0,0,0},scale={0.1,0.1,0.66}}
 					}}
 	}
-	--]]
-		local shipMesh = BuildMesh{
-			mesh="racingship_scaled75.obj",
-			barycentricTangents = true, --for use with wireframe shaders
-			--calculateTangents = true,
-			calculateNormals = false,
-			submeshesWhenCombining = false
-		}
-
-		shipMaterial = BuildMaterial{
-			renderqueue = 2000,
-			shader="UnlitTintedTexGlowWire",
-			shader = "MatCap/Vertex/PlainBrightGlow",
-			shadersettings={_GlowScaler=9, _Brightness=.66},
-			shadercolors={
-				_Color = {colorsource="highwayinverted", scaletype="intensity", minscaler=1, maxscaler=1},
-				--_SpecColor = {colorsource="highway", scaletype="intensity", minscaler=1, maxscaler=1},
-				_GlowColor = {colorsource="highway", scaletype="intensity", minscaler=1, maxscaler=1}
-				},
-			textures={_MatCap="matcapchrome.jpg", _Glow="glowBWj1.png"}
-		}
-
-		vehicleTable={
-			min_hover_height= 0.11,
-			max_hover_height = 1.4,
-			use_water_rooster = false,
-            smooth_tilting = false,
-            smooth_tilting_speed = 10,
-            smooth_tilting_max_offset = -20,
-			pos={x=0,y=0,z=0},
-			--scale={x=.75, y=.75, z=.75},
-
-			mesh = shipMesh,--built with BuildMesh above
-			--materials = {shipMaterial}, --assign the pre-created material
-			material = shipMaterial,
-			reflect = false,
-			--mesh="racingship.obj",
-			--calculateTangents = true,
-			--calculateNormals = false,
-			--submeshesWhenCombining = false,
-			layer = 15,
---			renderqueue = 2000,
---			shader="SelfGlowBumpSpec2_compiled.shader",
---			shadersettings={_Shininess=0.1, _GlowScaler=9},
---			shadercolors={
---				_Color = {colorsource="highwayinverted", scaletype="intensity", minscaler=1, maxscaler=1},
---				_SpecColor = {colorsource="highway", scaletype="intensity", minscaler=1, maxscaler=1},
---				_GlowColor = {colorsource="highway", scaletype="intensity", minscaler=1, maxscaler=1}
---				},
---			textures={_MainTex="maintex_darkerNeg170_highlights.png", _BumpMap="normal.png", _Glow="glowBW.png"},
-			scale = {x=1,y=1,z=1},
-			thrusters = {crossSectionShape={{-.35,-.35,0},{-.5,0,0},{-.35,.35,0},{0,.5,0},{.35,.35,0},{.5,0,0},{.35,-.35,0}},
-						perShapeNodeColorScalers={.5,1,1,1,1,1,.5},
-						shader="TransparentShadowCaster",
-						layer = 14,
-						renderqueue = 3000,
-						colorscaler = {close=2.5, far=0},
-						sizefalloff = 1,
-						minrenderedsize = 0.05,
-						extrusions=25,
-						stretch=-0.1191,
-						updateseconds = 0.025,
-						instances={
-							{pos={0.03,0.49,-1.62},rot={0,0,0},scale={0.6,0.6,0.6}},
-							{pos={0.03,0.49,-1.62},rot={0,0,0},scale={0.45,0.45,0.8}},
-							{pos={0.03,0.49,-1.62},rot={0,0,0},scale={0.3,0.3,0.8}},
-							{pos={0.03,0.49,-1.62},rot={0,0,0},scale={0.1,0.1,0.8}},
-
-							{pos={0.31,0.28,-1.64},rot={0,0,0},scale={0.3,0.3,0.66}},
-							{pos={0.31,0.28,-1.64},rot={0,0,0},scale={0.1,0.1,0.66}},
-
-							{pos={-0.25,0.28,-1.64},rot={0,0,0},scale={0.3,0.3,0.66}},
-							{pos={-0.25,0.28,-1.64},rot={0,0,0},scale={0.1,0.1,0.66}}
-						}}
-		}
 
 	SetPlayer{
 		--showsurfer = false,
 		--showboard = false,
 		cameramode = "third",
 	--	cameramode_air = "first",--"first_jumptrickthird", --start in first, go to third for jumps and tricks
-
+		cameradynamics = get_value(US_ship_cam,null,null,null,"high"),
 		camfirst={
 			pos={0,1.84,-0.8},
 			rot={20,0,0}},
 		camthird={
-			pos={0,2.5,-1.5},								--[0 2 -0.5]
-			rot={22,0,0},								--[30 0 0]
-			strafefactor = .77,							--[.75]
-			pos2={0,5,-4},								--[0 5 -4] 
-			rot2={30,0,0},								--[30 0 0]
-			strafefactorFar = 1,
+			pos=				get_value(US_ship_cam,{0,2.5,-1.5},	{0,2,-.5},	{0,4.4,-4},	{0,2,-.5}),						--[0 2 -0.5]
+			rot=				get_value(US_ship_cam,{22,0,0},		{30,0,0},	{24,0,0},	{30,0,0}),						--[30 0 0]
+			strafefactor = 		get_value(US_ship_cam,.77,			.75,		.75,		.5),							--[.75]
+			pos2=				get_value(US_ship_cam,{0,5,-4},		{0,5,-4},	{0,4,-4},	{0,5,-4}),						--[0 5 -4] 
+			rot2=				get_value(US_ship_cam,{30,0,0},		{30,0,0},	{30,0,0},	{30,0,0}),						--[30 0 0]
+			strafefactorFar = 	get_value(US_ship_cam,1,			1,			1,			1),
 			transitionspeed = 1,
 			puzzleoffset=-0.65,
 			puzzleoffset2=-1.5},
@@ -312,120 +374,48 @@ else
 	}
 end
 
-randomSky = math.random(1,2)
-
 if hifi then SetSkybox{
-	skyscreen = "thegridSky_" .. randomSky .. ".shader",
-	layer = 18 --13 for normal layer -- 11 for both
+		skyscreen = get_value(US_SkyBox,"Skyscreen/TheGrid","Skyscreen/TheGridSky"),
+		layer=18
 	}
 end
---SetSkybox{
-	--skyscreen = "theGridSky_3.shader"}
-
---end
-
-if skinvars.colorcount > 5 then
-	blockColors={
-    {r=0, g=0, b=0},
-    --{r=75, g=0, b=130},
-    --{r=0, g=0, b=205},
-    {r=50, g=205, b=50},
-    {r=255, g=160, b=0},
-    {r=255,g=0,b=0},
-	{r=255,g=255,b=255}
-	}
-end
-
-track_colors_choices = {
-{
-    {r=0, g=0, b=0},
-    {r=0, g=0, b=0},
-    {r=148,g=0,b=211}, --magenta
-    {r=25, g=25, b=112}, --dark violet
-    {r=34, g=139, b=34}, --emerald green
-    --{r=237, g=247, b=65}, --lemon
-	{255,195,35}, --mango
-	--{255,165,30}, --orange
-    --{r=250,g=50,b=36}, --bright red
-	{220,20,20}, --crimson
-},
-{
-    {r=0, g=0, b=0},
-    {r=0, g=0, b=0},
-	{r=148,g=0,b=211}, --magenta
-    {r=25, g=25, b=112}, --dark violet
-    {r=34, g=139, b=34}, --emerald green
-    --{r=237, g=247, b=65}, --lemon
-	--{255,195,35}, --mango
-	{255,165,30}, --orange
-    {r=250,g=50,b=36}, --bright red
-	--{220,20,20}, --crimson
-},
-}
-
-track_colors_index = math.random(#track_colors_choices)
-track_colors = track_colors_choices[track_colors_index]
-SetTrackColors(track_colors)
-print("random track color palette: #" .. track_colors_index)
 
 starMesh = BuildMesh{
 				recalculateNormalsEveryFrame=true,
 				splitVertices = true,
 				barycentricTangents = true,
-				meshes={"hexsphere/hexx_baseline.obj", "hexsphere/hexx4.obj", "hexsphere/hexx01.obj", "hexsphere/hexx02.obj", "hexsphere/hexx03.obj"}
+				meshes={"HexSphere/hexx_baseline.obj", "HexSphere/hexx04.obj", "HexSphere/hexx01.obj", "HexSphere/hexx02.obj", "HexSphere/hexx03.obj"}
 			}	
-
+			
 spikeMesh = BuildMesh{
 				recalculateNormalsEveryFrame=true,
 				splitVertices = true,
 				barycentricTangents = true,
-				meshes={"wallmorph_baseline.obj", "wallmorph0.obj", "wallmorph1.obj", "wallmorph2.obj", "wallmorph3.obj", "wallmorph4.obj"}
+				meshes={"Dylan_assets/wallmorph_baseline.obj", "Dylan_assets/wallmorph0.obj", "Dylan_assets/wallmorph1.obj", "Dylan_assets/wallmorph2.obj", "Dylan_assets/wallmorph3.obj", "Dylan_assets/wallmorph4.obj"}
 			}
 
-ballMesh = BuildMesh{
-				recalculateNormalsEveryFrame=true,
-				splitVertices = true,
-				barycentricTangents = true,
-				meshes={"ballmorph_baseline.obj", "ballmorph0.obj", "ballmorph1.obj", "ballmorph2.obj", "ballmorph3.obj", "ballmorph4.obj"}
-			}
-			
 pyrtopMesh = BuildMesh{
 				recalculateNormalsEveryFrame=true,
-				splitVertices = true,
+				splitVertices = false,
 				barycentricTangents = true,
-				meshes={"pyramidtop.obj", "pyramidtop.obj", "pyramidtop.obj", "pyramidtop.obj", "pyramidtop.obj", "pyramidtop.obj"}
+				mesh="Pyramids/pyramidtop.obj",
 			}
-			
+
 pyrbotMesh = BuildMesh{
 				recalculateNormalsEveryFrame=true,
-				splitVertices = true,
+				splitVertices = false,
 				barycentricTangents = true,
-				meshes={"pyramidbot.obj", "pyramidbot.obj", "pyramidbot.obj", "pyramidbot.obj", "pyramidbot.obj", "pyramidbot.obj"}
-			}
-			
---towerMesh = BuildMesh{
---				recalculateNormalsEveryFrame=true,
---				meshes={"towermorph_baseline.obj", "towermorph0.obj", "towermorph1.obj", "towermorph2.obj", "towermorph3.obj", "towermorph4.obj"}
---			}
-
-squareMesh = BuildMesh{
-				recalculateNormalsEveryFrame=true,
-				splitVertices = true,
-				barycentricTangents = true,
-				meshes={"squaremorph_baseline.obj", "squaremorph0.obj", "squaremorph1.obj", "squaremorph2.obj", "squaremorph3.obj", "squaremorph4.obj"}
+				mesh="Pyramids/pyramidbot.obj",
 			}
 
-if not jumping then
+--if not jumping then
 	SetBlocks{
 		maxvisiblecount = 200, -- fif(skinvars.minvisibleblocks, math.max(200, skinvars.minvisibleblocks), 200),
 		colorblocks={
-			mesh = "DBN_assets/block3.obj", --  ballMesh, --"DoubleLozenge.obj",
-			--shader = fif(hifi,"MatCap/Vertex/Textured Lit Double Mult", "MatCap/Vertex/PlainBright"),
-			--shader = "MatCap/Vertex/PlainBright", -- "MatCap/Vertex/PlainBrightWire",
-			shader = "UnlitEdgedBlock",
+			mesh = "DBN_assets/block3.obj",
+			shader = LA_unlitedgedblock_white,
 				shadercolors = {
-					--_Color = {1,1,1,1},
-					_Color = {colorsource={1,1,1,1}, scaletype="intensity", minscaler=1, maxscaler=1},
+					_Color = {colorsource={1,1,1,1}, scaletype="intensity", minscaler=4, maxscaler=4},
 					_Brightness = 1,
 					_AlphaGlowTint = 2/3,
 					_RimColor = {1,1,1,1},
@@ -436,7 +426,6 @@ if not jumping then
 				},
 			shadersettings = fif(hifi, {_Brightness=4.0}, {_Brightness=5.5}),
 			textures = {
-				--_MainTex = "NewBlock.png",
 				_MainTex="DBN_assets/Block3UVdark1.png", 
 				--_MatCap="DBN_assets/BlockUV.png",
 			},
@@ -447,21 +436,18 @@ if not jumping then
 		},
 		greyblocks={
 			mesh = spikeMesh,--"doublespike.obj",
-			--shader = fif(hifi,"MatCap/Vertex/Textured Lit Double Mult", "MatCap/Vertex/PlainBright"),
-			shader = "MatCap_PlainBrightWireGrey.shader", -- "MatCap/Vertex/PlainBright", --"MatCap/Vertex/PlainBrightWireWhite",
+			shader = "MatCap/Vertex/PlainBrightWireGrey", -- "MatCap/Vertex/PlainBright", --"MatCap/Vertex/PlainBrightWireWhite",
 			shadersettings = fif(hifi, {_Brightness=4.0}, {_Brightness=5}),
 			textures = {_MainTex="White.png", _MatCap="matcapchrome.jpg"},
 			--height = 0,
-			--shadercolors = {_Color="highwayinverted"},
 			shadercolors= {_Color={colorsource="highwayinverted", scaletype="intensity", minscaler=2, maxscaler=2.5}},
 			reflect = false
 		},
 		powerups={--override the following objects in case the mod uses them
 			powerpellet={
 			mesh = starMesh,
-				--shader = fif(hifi,"MatCap/Vertex/Textured Lit Double Mult", "MatCap/Vertex/PlainBright"),
 				shader = "RimLight",
-				textures={_MainTex="hexsphere/hexx_Color_4.png", _BumpMap="hexsphere/hexx_Normal_4.png", _MatCap="matcapchrome.jpg", _Glow="hexsphere/hexx_Color_4.png"},
+				textures={_MainTex="HexSphere/hexx_Color_4.png", _BumpMap="HexSphere/hexx_Normal_4.png", _MatCap="matcapchrome.jpg", _Glow="HexSphere/hexx_Color_4.png"},
 				--shadersettings = {_Outter=.1,_Inner = 5},
 				shadersettings = fif(hifi, {_Brightness=10}, {_Brightness=5}),
 			shadercolors={
@@ -480,59 +466,38 @@ if not jumping then
 		}
 
 	}
-end
-
-
---if hifi then
---	CreateLight{
---		railoffset = -3,
---		range = 10,
---		intensity = 2,
---		transform = {
---			position={0,.5,0}
---		},
---		color="highway"
---	}
 --end
 
 SetPuzzleGraphics{
 	usesublayerclone = false,
-	puzzlematchmaterial = {shader="VertexColorUnlitTintedAlpha",texture="tileMatchingBars.png"},
-	puzzleflyupmaterial = {shader="VertexColorUnlitTintedAddFlyup",texture="tileMatchingBars.png"},
-	puzzlematerial = {shader="VertexColorUnlitTintedAlpha2",texture="tilesSquare.png",texturewrap="clamp", usemipmaps="false",
-	--shadercolors={_Color={1,1,1,1}}}
+	puzzlematchmaterial = {shader="VertexColorUnlitTintedAlpha",texture="Dylan_assets/tileMatchingBars.png"},
+	puzzleflyupmaterial = {shader="VertexColorUnlitTintedAddFlyup",texture="Dylan_assets/tileMatchingBars.png"},
+	puzzlematerial = {shader="VertexColorUnlitTintedAlpha2",texture="Dylan_assets/tilesSquare.png",texturewrap="clamp", usemipmaps="false",
 	shadercolors={_Color = {colorsource={1,1,1,1}, scaletype="intensity", minscaler=1.0, maxscaler=1.5}}}
 }
 
 SetRings{ --setup the tracks tunnel rings. the airtexture is the tunnel used when you're up in a jump
 	texture="ringOnTop_2.png",
-	--texture="Classic_OnBlack",
 	shader="VertexColorUnlitTintedAddSmooth",
 	size=22,
 	percentringed=.2,--ifhifi(2,.01),-- .2,
-	airtexture="Bits.png",
+	airtexture="ringOnTop_2.png",
 	airshader="VertexColorUnlitTintedAddSmooth",
-	airsize=16,
+	airsize=28,
 	colorsource="highway", scaletype="intensity", minscaler=1, maxscaler=2
 }
 
---if jumping then wakeHeight=(ifhifi(4,2)) else wakeHeight = 0 end
-wakeHeight=1.9 --(ifhifi(4,2))
+if jumping then wakeHeight=(ifhifi(4,2)) else wakeHeight = get_value(US_wake_type,1.9,1.5,ifhifi(3,2)) end
 extraWidth = trackWidth - 5
 if jumping then extraWidth = 0 end
 wakeStrafe = 7.5 + extraWidth
---wakeStrafe = 14.7
---if not jumping then wakeHeight = 1.75 end
 SetWake{ --setup the spray coming from the two pulling "boats"
 	height = wakeHeight,
-	fallrate = 0.965,
-	--offsets = {{wakeStrafe,0,0}, {-wakeStrafe,0,0}, {0,0,0}},
+	fallrate = get_value(US_wake_type,0.965,0.99,1.0),
 	offsets = {{wakeStrafe,0,0}, {-wakeStrafe,0,0}},
 	--strafe = wakeStrafe,
-	--shader = fif(jumping, "VertexColorUnlitTintedAddSmooth", "VertexColorUnlitTintedAddSmoothQuarter"),
 	shader = "VertexColorUnlitTintedAddSmooth",
 	layer = 13, -- looks better not rendered in background when water surface is not type 2
-	--layer = 12,
 	bottomcolor = {r=0,g=0,b=0},
 	topcolor = {colorsource="highway", scaletype="intensity", minscaler=0.5, maxscaler=1.5}
 }
@@ -542,10 +507,10 @@ CreateObject{
 	tracknode="end",
 	gameobject={
 		transform={pos={0,0,126},scale={scaletype="intensity",min={55,99,900},max={66,120,900}}},
-		mesh="danishCookie_boxes.obj",
+		mesh="Dylan_assets/danishCookie_boxes.obj",
 		shader="VertexColorUnlitTintedAdd",
 		shadercolors={
-			_Color="highway"
+			_Color=get_value(US_end_cookie,"highway",{.5,.5,.5,.5})
 		}
 	}
 }
@@ -565,7 +530,7 @@ pyrbotRotationSpeeds_Zone = {}
 
 for i=1,#track do
 	--if not track[i].funkyrot then -- don't place structures at loop/corkscrew nodes (not sure if necessary for these objects)
-		if i%300 == 0 then
+		if i%400 == 0 then
 			hexNodes_Zone[#hexNodes_Zone+1] = i
 			local xOffset = 1500 + math.random(0,3) * 7500
 			if math.random() > 0.5 then xOffset = xOffset * -1 end
@@ -615,7 +580,7 @@ CreateObject{
 			_Color = {colorsource="highway", scaletype="intensity", minscaler=1, maxscaler=6},
 			_RimColor={255,255,255}
 		},
-		textures={_MainTex="hexsphere/hexx_Color_5.png", _BumpMap="hexsphere/hexx_Normal_5.png", _MatCap="matcapchrome.jpg", _Glow="hexsphere/hexx_Color_1.png"},
+		textures={_MainTex="HexSphere/hexx_Color_5.png", _BumpMap="HexSphere/hexx_Normal_5.png", _MatCap="matcapchrome.jpg", _Glow="HexSphere/hexx_Color_1.png"},
 		--texturewrap = "clamp",
 		scale = {x=3,y=3,z=3},
 	}
@@ -625,11 +590,11 @@ BatchRenderEveryFrame{
 	prefabName="HexSphere",
 	locations=hexNodes_Zone,
 	rotateWithTrack=false,
-	maxShown=50,
-	maxDistanceShown=15000,
+	maxShown=30,
+	maxDistanceShown=12400,
 	rotationspeeds = hexRotationSpeeds_Zone,
 	offsets=hexOffsets_Zone,
-	collisionLayer = -2,
+	collisionLayer = -1,
 	testAndHideIfCollideWithTrack=true
 }
 end
@@ -644,17 +609,14 @@ CreateObject{
 		pos = {x=0,y=0,z=0},
 		mesh = pyrtopMesh,
 		shader="RimLightAdd",
-		--shader="VertexColorUnlitTintedAddSmooth",
-		--shader="IlluminDiffuse",
 		diffuseinair = true,
 		shadersettings={_GlowScaler=2, _Brightness=1},
 		shadercolors={
-			--_Color = {colorsource="highway", scaletype="intensity", minscaler=1, maxscaler=6},
-			_Color="highwayinverted",
+			_Color = {colorsource="highwayinverted", scaletype="intensity", minscaler=1, maxscaler=1},
+			--_Color="highwayinverted",
 			_RimColor={128,128,128,128}
 		},
-		--textures={_MainTex="hexsphere/hexx_Color_5.png", _BumpMap="hexsphere/hexx_Normal_5.png", _MatCap="matcapchrome.jpg", _Glow="hexsphere/hexx_Color_1.png"},
-		texture="pyramid.png",
+		texture="Pyramids/pyramid.png",
 		--texturewrap = "clamp",
 		scale = {x=1,y=1,z=1},
 	}
@@ -682,17 +644,14 @@ CreateObject{
 		pos = {x=0,y=0,z=0},
 		mesh = pyrbotMesh,
 		shader="RimLightAdd",
-		--shader="VertexColorUnlitTintedAddSmooth",
-		--shader="IlluminDiffuse",
 		diffuseinair = true,
 		shadersettings={_GlowScaler=2, _Brightness=1},
 		shadercolors={
-			--_Color = {colorsource="highway", scaletype="intensity", minscaler=1, maxscaler=6},
-			_Color="highwayinverted",
+			_Color = {colorsource="highwayinverted", scaletype="intensity", minscaler=1, maxscaler=1},
+			--_Color="highwayinverted",
 			_RimColor={128,128,128,128}
 		},
-		--textures={_MainTex="hexsphere/hexx_Color_5.png", _BumpMap="hexsphere/hexx_Normal_5.png", _MatCap="matcapchrome.jpg", _Glow="hexsphere/hexx_Color_1.png"},
-		texture="pyramid.png",
+		texture="Pyramids/pyramid.png",
 		--texturewrap = "clamp",
 		scale = {x=1,y=1,z=1},
 	}
@@ -710,222 +669,66 @@ BatchRenderEveryFrame{prefabName="PyramidBot",
 }
 end
 
-
---This shows that scripted dynamic meshes can be used, but you probably don't need this
---function AddQuadIndices(t, index0, index1, index2, index3)
---	table.insert(t, index0)
---	table.insert(t, index1)
---	table.insert(t, index2)
---	table.insert(t, index1)
---	table.insert(t, index3)
---	table.insert(t, index2)
---end
---
---if mesh1==nil then --if this mesh hasn't been created yet
---	verts = {}
---	verts[1] = {x=-0.5, y=0.5, z=0.5}
---	verts[2] = {x=0.5, y=0.5, z=0.5}
---	verts[3] = {x=-0.5, y=0.5, z=-0.5}
---	verts[4] = {x=0.5, y=0.5, z=-0.5}
---	verts[5] = {x=-0.5, y=-0.5, z=0.5}
---	verts[6] = {x=0.5, y=-0.5, z=0.5}
---	verts[7] = {x=-0.5, y=-0.5, z=-0.5}
---	verts[8] = {x=0.5, y=-0.5, z=-0.5}
---	uvs = {}
---	uvs[1] = {0,1}
---	uvs[2] = {1,1}
---	uvs[3] = {0,1}
---	uvs[4] = {1,1}
---	uvs[5] = {0,0}
---	uvs[6] = {1,0}
---	uvs[7] = {0,0}
---	uvs[8] = {1,0}
---	indices = {}
---	AddQuadIndices(indices, 0, 1, 2, 3)
---	AddQuadIndices(indices, 1, 0, 5, 4)
---	AddQuadIndices(indices, 3, 1, 7, 5)
---	AddQuadIndices(indices, 2, 3, 6, 7)
---	AddQuadIndices(indices, 0, 2, 4, 6)
---	AddQuadIndices(indices, 5, 4, 7, 6)
---
---	mesh1 = BuildMesh{
---		vertextable=verts,
---		indextable=indices,
---		uvtable = uvs,
---		calculatenormals = true
---	}
---end
---
---function Update(dt) --called every frame if it exists
---	for i=1,4 do
---		verts[i].y = dt*100
---	end
---
---	BuildMesh{
---		mesh=mesh1,
---		vertextable = verts,
---		calculatenormals = true
---	}
---end
-
---[[CreateObject{ --creates a uniquely named prototype (prefab) that can be used later in the script or by the mod script. The audiosprint mod uses prototypes created in it's skin script
-	name="BuildingCloneMe",
-	gameobject={
-		pos={x=0,y=0,z=0},
-		--mesh="skyscraper42.obj",
-		mesh="skyscraper_withbase.obj",
-		--shader="VertexColorUnlitTintedAlpha",
-		shader="Diffuse",
-		--diffuseinair = true,
-		shadercolors={
-			_Color={r=0,g=0,b=0}
-			--_Color="highwaysmooth"
-			--_Color = {colorsource="highway", scaletype="intensity", minscaler=6, maxscaler=6}
-			--_Color = {colorsource="highway", scaletype="intensity", minscaler=2, maxscaler=2}
-		},
-		texture="White.png",
-		--texture="skyscraper.png",
-		scale = {x=1,y=1,z=1}
-	}
-}]]
-
---CreateObject{ --creates a uniquely named prototype (prefab) that can be used later in the script or by the mod script. The audiosprint mod uses prototypes created in it's skin script
---	name="BuildingCloneMeToo",
---	gameobject={
---		pos={x=0,y=0,z=0},
---		--mesh="skyscraper42.obj",
---		mesh="skyscraper42_withbase.obj",
---		--shader="VertexColorUnlitTintedAlpha",
---		shader="PsychoBuilding",
---		shadercolors={
---			--_Color={r=255,g=255,b=255}
---			--_Color="highwaysmooth"
---			--_Color = {colorsource="highway", scaletype="intensity", minscaler=6, maxscaler=6}
---			_Color = {colorsource="highway", scaletype="intensity", minscaler=2, maxscaler=2}
---		},
---		--texture="cliffRails.png",
---		--texture="skyscraper.png",
---		scale = {x=1,y=1,z=1}
---	}
---}
-
-
---[[if buildingNodes == nil then
-	buildingNodes = {} --the track is made of nodes, each one with a position and rotation. This table will hold the indices of track nods that should have a skyscraper rendered at them (with some offset)
-	offsets = {}
-	buildingNodesToo = {}
-	offsetsToo = {}
-	for i=1,#track do
-		if i%80==0 then
-			buildingNodes[#buildingNodes+1] = i
-			local xOffset = 150 + 1650*math.random()
-			if math.random() > 0.5 then xOffset = xOffset * -1 end
-			offsets[#offsets+1] = {xOffset,-100,0}
-		end
-
---		if (i+40)%120==0 then
---			buildingNodesToo[#buildingNodesToo+1] = i
---			local xOffset = 150 + 1650*math.random()
---			if math.random() > 0.5 then xOffset = xOffset * -1 end
---			offsetsToo[#offsetsToo+1] = {xOffset,-100,0}
---		end
-	end
-
-	BatchRenderEveryFrame{prefabName="BuildingCloneMe", --tell the game to render these prefabs in a batch (with Graphics.DrawMesh) every frame
-							locations=buildingNodes,
-                    		rotateWithTrack=false,
-                    		maxShown=50,
-                    		maxDistanceShown=2000,
-							offsets=offsets,
-							collisionLayer = 1,--will collision test with other batch-rendered objects on the same layer. set less than 0 for no other-object collision testing
-							testAndHideIfCollideWithTrack=true --if true, it checks each render location against a ray down the center of the track for collision. Any hits are not rendered
-						}
-
---	BatchRenderEveryFrame{prefabName="BuildingCloneMeToo", --tell the game to render these prefabs in a batch (with Graphics.DrawMesh) every frame
---							locations=buildingNodesToo,
---                    		rotateWithTrack=false,
---                    		maxShown=50,
---                    		maxDistanceShown=2000,
---							offsets=offsetsToo,
---							collisionLayer = 1,--will collision test with other batch-rendered objects on the same layer. set less than 0 for no other-object collision testing
---							testAndHideIfCollideWithTrack=true --if true, it checks each render location against a ray down the center of the track for collision. Any hits are not rendered
---						}]]
---end
-
 if quality > 3 then
-wireTerrainMesh = BuildMesh{
-				recalculateNormalsEveryFrame=false,
-				--meshes={"centerbox.obj", "centerbox_m1.obj", "centerbox_m2.obj", "centerbox_m3.obj", "centerbox_m4.obj", "centerbox_m5.obj"}
-				--meshes={"sidebox.obj"}
-				meshes={"sideboxb0.obj", "sideboxb1.obj", "sideboxb2.obj", "sideboxb3.obj", "sideboxb4.obj", "sideboxb5.obj"}
-			}
+	wireTerrainMesh = BuildMesh{
+					recalculateNormalsEveryFrame=false,
+					meshes={"Dylan_assets/sideboxb0.obj", "Dylan_assets/sideboxb1.obj", "Dylan_assets/sideboxb2.obj", "Dylan_assets/sideboxb3.obj", "Dylan_assets/sideboxb4.obj", "Dylan_assets/sideboxb5.obj"}
+				}
 
-CreateObject{ --creates a uniquely named prototype (prefab) that can be used later in the script or by the mod script. The audiosprint mod uses prototypes created in it's skin script
-	name="SideBoxCloneMe",
-	gameobject={
-		pos={x=0,y=0,z=0},
-		--mesh="skyscraper42.obj",
-		mesh=wireTerrainMesh,
-		--shader="VertexColorUnlitTintedAlpha",
-		--shader="UnlitTintedTex",
-		shader="Proximity2ColorAlpha", -- fade out the distant lines to remove the noise from being smaller than pixels at distance
-		shadercolors={
-			_Color = {colorsource="highway", scaletype="intensity", minscaler=2, maxscaler=3}
-		},
-		shadersettings={
-			_StartDistance = 50,
-			_FullDistance = 125
-		},
-		texture="White.png",
-		--texture="skyscraper.png",
-		scale = {x=1,y=1,z=1}
+	CreateObject{ --creates a uniquely named prototype (prefab) that can be used later in the script or by the mod script. The audiosprint mod uses prototypes created in it's skin script
+		name="SideBoxCloneMe",
+		gameobject={
+			pos={x=0,y=0,z=0},
+			mesh=wireTerrainMesh,
+			shader="Proximity2ColorAlpha", -- fade out the distant lines to remove the noise from being smaller than pixels at distance
+			shadercolors={
+				_Color = {colorsource="highway", scaletype="intensity", minscaler=2, maxscaler=3}
+			},
+			shadersettings={
+				_StartDistance = 50,
+				_FullDistance = 125
+			},
+			texture="White.png",
+			scale = {x=1,y=1,z=1}
+		}
 	}
-}
 
-if terrainNodes == nil then
-	terrainNodes = {} --the track is made of nodes, each one with a position and rotation. This table will hold the indices of track nods that should have a skyscraper rendered at them (with some offset)
-	terrainOffsets = {}
-	terrainOffsetsR = {}
-	terrainRotsR = {}
-	--offsets = {}
-	--buildingNodesToo = {}
-	--offsetsToo = {}
-	for i=1,#track do
-		if i%2==0 then
-			terrainNodes[#terrainNodes+1] = i
-			terrainOffsets[#terrainOffsets+1] = {-trackWidth,0,0}
-			terrainOffsetsR[#terrainOffsetsR+1] = {trackWidth,0,0}
-			terrainRotsR[#terrainRotsR+1] = {0,180,0}
-			--local xOffset = 150 + 1650*math.random()
-			--if math.random() > 0.5 then xOffset = xOffset * -1 end
-			--offsets[#offsets+1] = {xOffset,-100,0}
+	if terrainNodes == nil then
+		terrainNodes = {} --the track is made of nodes, each one with a position and rotation. This table will hold the indices of track nods that should have a skyscraper rendered at them (with some offset)
+		terrainOffsets = {}
+		terrainOffsetsR = {}
+		terrainRotsR = {}
+		for i=1,#track do
+			if i%2==0 then
+				terrainNodes[#terrainNodes+1] = i
+				terrainOffsets[#terrainOffsets+1] = {-trackWidth,0,0}
+				terrainOffsetsR[#terrainOffsetsR+1] = {trackWidth,0,0}
+				terrainRotsR[#terrainRotsR+1] = {0,180,0}
+			end
 		end
-	end
 
-	BatchRenderEveryFrame{prefabName="SideBoxCloneMe", --tell the game to render these prefabs in a batch (with Graphics.DrawMesh) every frame
-							locations=terrainNodes,
-							offsets = terrainOffsets,
-                    		rotateWithTrack=true,
-                    		maxShown=1000,
-                    		colors = "nodecolor", -- objects are rendered by the color of the highway node they're set to
-                    		--maxDistanceShown=20000,
-							--offsets=offsets,
-							--collisionLayer = 1,--will collision test with other batch-rendered objects on the same layer. set less than 0 for no other-object collision testing
-							testAndHideIfCollideWithTrack=false --if true, it checks each render location against a ray down the center of the track for collision. Any hits are not rendered
-						}
+		BatchRenderEveryFrame{prefabName="SideBoxCloneMe", --tell the game to render these prefabs in a batch (with Graphics.DrawMesh) every frame
+								locations=terrainNodes,
+								offsets = terrainOffsets,
+								rotateWithTrack=true,
+								maxShown=1000,
+								colors = "nodecolor", -- objects are rendered by the color of the highway node they're set to
+								--maxDistanceShown=20000,
+								--collisionLayer = 1,--will collision test with other batch-rendered objects on the same layer. set less than 0 for no other-object collision testing
+								testAndHideIfCollideWithTrack=false --if true, it checks each render location against a ray down the center of the track for collision. Any hits are not rendered
+							}
 
-	BatchRenderEveryFrame{prefabName="SideBoxCloneMe", --tell the game to render these prefabs in a batch (with Graphics.DrawMesh) every frame
-							locations=terrainNodes,
-							offsets = terrainOffsetsR,
-							rotations = terrainRotsR,
-                    		rotateWithTrack=true,
-                    		maxShown=1000,
-                    		colors = "nodecolor", -- objects are rendered by the color of the highway node they're set to
-                    		--maxDistanceShown=20000,
-							--offsets=offsets,
-							--collisionLayer = 1,--will collision test with other batch-rendered objects on the same layer. set less than 0 for no other-object collision testing
-							testAndHideIfCollideWithTrack=false --if true, it checks each render location against a ray down the center of the track for collision. Any hits are not rendered
-						}
+		BatchRenderEveryFrame{prefabName="SideBoxCloneMe", --tell the game to render these prefabs in a batch (with Graphics.DrawMesh) every frame
+								locations=terrainNodes,
+								offsets = terrainOffsetsR,
+								rotations = terrainRotsR,
+								rotateWithTrack=true,
+								maxShown=1000,
+								colors = "nodecolor", -- objects are rendered by the color of the highway node they're set to
+								--maxDistanceShown=20000,
+								--collisionLayer = 1,--will collision test with other batch-rendered objects on the same layer. set less than 0 for no other-object collision testing
+								testAndHideIfCollideWithTrack=false --if true, it checks each render location against a ray down the center of the track for collision. Any hits are not rendered
+							}
 	end
 end
 
@@ -947,10 +750,7 @@ function Update(dt, trackLocation, playerStrafe, playerJumpHeight, intensity)
 					}
 
 	UpdateMeshMorphWeights{mesh=spikeMesh, weights=morphweights}
-	UpdateMeshMorphWeights{mesh=newspikeMesh, weights=morphweights}
-	UpdateMeshMorphWeights{mesh=ballMesh, weights=morphweights}
 	local morphweightsreversed = {morphweights[5], morphweights[4], morphweights[3], morphweights[2], morphweights[1]}
-	UpdateMeshMorphWeights{mesh=squareMesh, weights=morphweightsreversed}
 	UpdateMeshMorphWeights{mesh=starMesh, weights=starmorphweights}
 	UpdateMeshMorphWeights{mesh=pyrtopMesh, weights=morphweights}
 	UpdateMeshMorphWeights{mesh=pyrbotMesh, weights=morphweights}
@@ -960,110 +760,31 @@ function Update(dt, trackLocation, playerStrafe, playerJumpHeight, intensity)
 	if shipMaterial then
 		local enginePower = 3 + 20*intensity
 		UpdateShaderSettings{material=shipMaterial, shadersettings={_GlowScaler=enginePower}}
-end
-end
-
---[[
-CreateObject{ --creates a uniquely named prototype (prefab) that can be used later in the script or by the mod script. The audiosprint mod uses prototypes created in it's skin script
-	name="SpriteTest",
-	active=false,
-	gameobject={
-		pos={x=0,y=0,z=0},
-		mesh="skyscraper42_withbase.obj",--mesh doesn't matter, the spritebatch won't use it
-		shader="VertexColorUnlitTintedAddSmooth",
-		shadercolors={
-			_Color = {255,255,255}
-		},
-		texture="Frequency_OnBlack.jpg"
-	}
-}
-
-spritenodes = {}
-spriteoffsets = {}
-for i=1,#track do
-	if i%80==0 then
-		spritenodes[#spritenodes+1]=i
-		local xOffset = 150 + 300*math.random()
-		if math.random() > 0.5 then xOffset = xOffset * -1 end
-		spriteoffsets[#spriteoffsets+1] = {xOffset,-100,0}
 	end
 end
 
-CreateSpriteBatch{
-	prefabName="SpriteTest",--the material from this prefab is used
-	locations=spritenodes,
-	offsets={120,0,0},
-	scales={30,30,30},
-	repeaterSpacings={2,4,6,8,10,12,14,16,18,20}
-}
-
---]]
 if quality < 3 then
-CreateObject{--skywires, the red lines in the sky. A railed object is attached to the track and moves along it with the player.
-	railoffset=0,
-	floatonwaterwaves = false,
-	gameobject={
-		name="scriptSkyWires",
-		pos={x=0,y=0,z=0},
-		mesh="skywires.obj",
-		renderqueue=1000,
-		layer=ifhifi(18,13), -- in low detail the glow camera (layer 18) is disabled, so move the skywires to the main camera's layer (13)
-		shader="VertexColorUnlitTintedSkywire",
-		shadercolors={
-			_Color="highway" --{r=255,g=0,b=0}
-		},
-		texture="White.png",
-		scale = {x=1,y=1,z=1},
-		lookat = "end"
-	}
-}
-
-if jumping then
-	--[[
-	CreateObject{--left rope puller
-		railoffset=18,
-		floatonwaterwaves = true,
-		tiltsmoother = 44,
+	CreateObject{--skywires, the red lines in the sky. A railed object is attached to the track and moves along it with the player.
+		railoffset=0,
+		floatonwaterwaves = false,
 		gameobject={
-			pos={
-				x=-7.5,
-				y=.25,
-				z=1},
-			mesh="staggersphere.obj",
-			shader="rimlight.shader",--shader text files can be used. Take the compiled shader from unity and give it a "shader" file extension to use it
+			name="scriptSkyWires",
+			pos={x=0,y=0,z=0},
+			mesh="Dylan_assets/skywires.obj",
+			renderqueue=1000,
+			layer=ifhifi(18,13), -- in low detail the glow camera (layer 18) is disabled, so move the skywires to the main camera's layer (13)
+			shader="VertexColorUnlitTintedSkywire",
 			shadercolors={
-				_Color={r=46,g=46,b=46},
-				_RimColor={colorsource="highway", scaletype="intensity", minscaler=3, maxscaler=3}
+				_Color="highway" --{r=255,g=0,b=0}
 			},
 			texture="White.png",
-			scale = {x=1.25,y=1.25,z=1.25}
+			scale = {x=1,y=1,z=1},
+			lookat = "end"
 		}
 	}
+end
 
-	CreateObject{--right rope puller
-		railoffset=18,
-		floatonwaterwaves = true,
-		tiltsmoother = 44,
-		gameobject={
-			pos={
-				x=7.5,
-				y=.25,
-				z=1},
-			mesh="staggersphere.obj",
-			shader="rimlight.shader",
-			shadercolors={
-				_Color={r=46,g=46,b=46},
-				_RimColor={colorsource="highway", scaletype="intensity", minscaler=3, maxscaler=3}
-			},
-			texture="White.png",
-			scale = {x=1.25,y=1.25,z=1.25}
-		}
-	}
-	--]]
-end
-end
 --RAILS. rails are the bulk of the graphics in audiosurf. Each one is a 2D shape extruded down the length of the track.
-
 if #skinvars["lanedividers"] > 2 then
 	local laneDividers = skinvars["lanedividers"]
 	for i=1,#laneDividers do
@@ -1111,56 +832,13 @@ if jumping then
 		color = {r=255,g=255,b=255},
 		flatten=false,
 		wrapnodeshape = false,
-		texture="cliffRails.png",
+		texture="Dylan_assets/cliffRails.png",
 		fullfuture = true,--ifhifi(true,false),
 		stretch = 3,
 		calculatenormals = true,
 		shader="Cliff"
 	}
 end
-
---CreateRail{--big cliff low detail. This one will almost always be able to render the song's full future.
---	positionOffset={
---		x=0,
---		y=0},
---	crossSectionShape={
---		{x=0,y=-4},
---		{x=0,y=-35}
---		},
---	perShapeNodeColorScalers={
---		1,
---		.4},
---	colorMode="highway",
---	color = {r=255,g=255,b=255},
---	flatten=false,
---	wrapnodeshape = true,
---	texture="cliffRails.png",
---	fullfuture = true,
---	stretch = 3,
---	calculatenormals = true,
---	shader="Cliff"
---}
-
---[[
-CreateRail{--distant water
-	positionOffset={
-		x=0,
-		y=0},
-	crossSectionShape={
-		{x=-12,y=-5.5},
-		{x=12,y=-5.5}},
-	perShapeNodeColorScalers={
-		1,
-		1},
-	colorMode="static",
-	color = {r=0,g=137,b=255},
-	flatten=false,
-	wrapnodeshape = false,
-    layer=13,
-	texture="White.png",
-	shader="VertexColorUnlitTinted"
-}
---]]
 
 if not jumping then
 	CreateRail{--road surface
@@ -1242,7 +920,7 @@ if not jumping then
 	end
 end
 
-if jumping then
+--[[ if jumping then
 	CreateRail{--left rail
 		positionOffset={
 			x=-trackWidth,
@@ -1284,7 +962,7 @@ if jumping then
 		texture="cliffRails.png",
 		shader="CliffRail"
 	}
-end
+end ]]
 
 --------------------------------------------------
 

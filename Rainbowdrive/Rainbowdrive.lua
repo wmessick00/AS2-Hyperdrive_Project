@@ -1,6 +1,6 @@
 --[[Credits:
 	Kiisseli 		- original ideas
-	DBN 			- DBN_assets, color palette randomizer, mod documentation, and addEntropy function
+	DBN 			- DBN_assets, color palette randomizer, mod documentation, and addEntropy code block
 	Epikas Jones 	- Original HexSphere mesh
 	Nova 			- Original Nova color palette
 ]]
@@ -9,11 +9,11 @@
 US_palette = 		0 	-- 0 = random, 1-8 = specific palette, 9 = Album Art
 US_SkyBox = 		1 	-- 0 = random, 1 = the grid, 2 = the grid sky
 US_ghost_ship = 	1 	-- 0 = random, 1 = ghost ship, 2 = solid ship
-US_highway_cookie = 1 	-- 0 = random, 1 = highway colors, 2 = white
+US_end_cookie = 	1 	-- 0 = random, 1 = highway colors, 2 = white
 US_ship_cam = 		1 	-- 0 = chaos,  1 = modern camera, 2 = legacy camera, 3 = pulled back camera, 4 = dynamic camera
 US_wake_type = 		1	-- 0 = random, 1 = MODERN(1.9H - 0.965FR), 2 = LEGACY(1.5H - 0.99FR), 3 = ORIGINAL(3/2H - 1.0FR)
 --END USER SETTINGS--
-print(string.format("--  USER SETTINGS:  Palette = %d, SkyBox = %d, Ship = %d, End Cookie = %d, Camera = %d, Wake Type = %d  --", US_palette,US_SkyBox,US_ghost_ship,US_highway_cookie,US_ship_cam,US_wake_type))
+print(string.format("--  USER SETTINGS:  Palette = %d, SkyBox = %d, Ship = %d, End Cookie = %d, Camera = %d, Wake Type = %d  --", US_palette,US_SkyBox,US_ghost_ship,US_end_cookie,US_ship_cam,US_wake_type))
 
 --   LOAD ASSETS   --
 LA_IlluminDiffuse_B = AssetBundles.hyperdriveproject:LoadAsset('Assets/DBN_Assets/Shaders/IlluminDiffuse_B.shader')
@@ -105,6 +105,158 @@ do
 	print("rng seed: " .. entropy)
 	math.randomseed(entropy)
 end
+
+track_colors_choices = {
+{										--Waltz 1
+{0,0,0},
+	{200,10,40}, --hot magenta
+	{200,18,100},--magenta
+{0,0,0},
+	{200,30,100},--purple
+	--{250,43,239},--Rose Fuchsia
+	{31,94,86}, --ocean green
+	{200,20,190},--purple
+	{25,25,112},--blue
+	{100,15,200},--dark purple
+	{39,45,200},--another blue
+	{0,183,104},--seafoam green
+	{12,20,122},--dark blue
+},
+{										--Burning Skies 2
+{0,0,0},
+	{200,30,15}, --red orange
+	{246,159,15},--orange
+	{200,10,40}, --hot magenta
+{0,0,0},
+	{200,30,100},--purple
+	{25,25,112},--blue
+	{9,112,66},--dark green
+	{100,15,200},--dark purple
+	{26,30,133},--another blue
+	--{18,128,87},--seafoam green
+	{153,11,77}, --some magenta
+	{200,30,15},--cool red
+{0,0,0},
+},
+
+{										--Nova 3
+{0,0,0},
+	{128,16,96}, --magenta
+	{69,13,96},--black magenta
+	{3,37,77},--deep blue
+	{0,30,100},--less deep blue
+	{0,60,130},--deep blue
+	{140,20,20}, --crimson
+	{104,0,148},--dark magenta
+	{25,40,150},
+	{25,50,112}, --dark navy
+	{4,60,198},--bright blue
+	{75,2,130},
+},
+{										--Inferno 4
+{0,0,0},
+	{50,50,50}, --dark grey
+	--{90,90,90}, --grey
+	{37,13,126}, --dark purple
+	{105,0,22}, --dark maroon
+	{163,16,44}, --maroon
+	{50,0,5}, --black red
+	{100,0,10}, --dark red
+	{58,16,61}, --dark violet
+{0,0,0},
+	{100,0,10}, --dark red
+	{245,77,22}, --orange
+},
+{										--Galaxy 5
+{0,0,0},
+	{220,20,40}, --red
+	{248,70,49}, --orange red
+	{219,46,104}, --magenta
+	--{248,70,49}, --orange red
+	{94,6,64}, --midnight satin
+	{216,67,21}, --pure light
+	{28,26,84}, --deep blue
+	{1,1,5}, --deep black
+},
+{										--Magic 6
+{0,0,0},
+	{14,115,51},--green
+	--{84,9,105},--purple
+	{25,25,112}, --dark violet
+	--{182,134,24},--yelloworange
+	{84,9,105},--purple
+	{220,20,20}, --crimson
+{0,0,0},
+	{128,5,5}, --maroon
+	{255,69,0},--orange
+	{0,8,79},--blue
+	{12,149,203},--light blue
+},
+{										--Adrenalin 7
+{0,0,0},
+	{12,10,87}, --very dark blue
+	{0,87,37}, --dark green
+	{124,164,8}, --yellow
+	{153,21,21}, --dark red
+	{207,138,10}, --orange
+	{160,5,5}, --crimson
+	{247,57,57}, --bright red
+	{12,10,87}, --very dark blue
+	--{194,194,8}, --yellow
+	{153,21,21}, --dark red
+	{207,138,10}, --orange
+	{160,5,5}, --crimson
+	{247,57,57}, --bright red
+},
+}
+
+if skinvars.colorcount > 5 then
+	blockColors={
+	{r=0, g=0, b=0},
+	--{r=75, g=0, b=130},
+	--{r=0, g=0, b=205},
+	{r=50, g=205, b=50},
+	{r=255, g=160, b=0},
+	{r=255,g=0,b=0},
+	{r=255,g=255,b=255}
+	}
+end
+
+if US_palette >= 0 and US_palette <= #track_colors_choices then
+	if US_palette >= 1 then
+		track_colors_index = US_palette
+	else
+		track_colors_index = math.random(#track_colors_choices)
+	end
+
+	track_colors = track_colors_choices[track_colors_index]
+	SetTrackColors(track_colors)
+	palette_names = {"Waltz", "Burning Skies", "Nova", "Inferno", "Galaxy", "Magic", "Adrenalin"}
+	palette_index = palette_names[track_colors_index]
+	print("                                        " .. palette_index)
+	print("Random Track Color Palette: #" .. track_colors_index)
+else
+	ezio = GetAlbumArtPalette{mincount=3, maxcount=6}
+	SetTrackColors(ezio)
+	i=1
+	while(i<=#ezio)do
+		for key,value in pairs(ezio[i]) do 
+		formattedKey = "%s = %d"
+		print(string.format(formattedKey, string.upper(key), value*255))
+		end
+	print("\n")
+	i=i+1
+	end
+end
+--]]
+--SetBlockColors{ --this is only used for puzzle modes (which you don't have yet) with multiple colors of blocks
+--    {r=93, g=8, b=132},
+--	{r=1.0, g=0.27, b=0.2},
+--    {r=0.047, g=0.5098, b=0.94},
+--    {r=1.0, g=0.85, b=0.4157},
+--	{r=0, g=0.29, b=0.08},
+--    {r=1,g=0,b=0}
+--}
 
 SetScene{
 	ambientlight = "highwayinverted",
@@ -294,160 +446,6 @@ if hifi then SetSkybox{
 	}
 end
 
-track_colors_choices = {
-{										--Waltz 1
-{0,0,0},
-    {200,10,40}, --hot magenta
-    {200,18,100},--magenta
-{0,0,0},
-    {200,30,100},--purple
-	--{250,43,239},--Rose Fuchsia
-	{31,94,86}, --ocean green
-    {200,20,190},--purple
-    {25,25,112},--blue
-    {100,15,200},--dark purple
-    {39,45,200},--another blue
-    {0,183,104},--seafoam green
-    {12,20,122},--dark blue
-},
-{										--Burning Skies 2
-{0,0,0},
-    {200,30,15}, --red orange
-    {246,159,15},--orange
-    {200,10,40}, --hot magenta
-{0,0,0},
-    {200,30,100},--purple
-    {25,25,112},--blue
-	{9,112,66},--dark green
-    {100,15,200},--dark purple
-    {26,30,133},--another blue
-    --{18,128,87},--seafoam green
-	{153,11,77}, --some magenta
-    {200,30,15},--cool red
-{0,0,0},
-},
-
-{										--Nova 3
-{0,0,0},
-	{128,16,96}, --magenta
-	{69,13,96},--black magenta
-    {3,37,77},--deep blue
-	{0,30,100},--less deep blue
-    {0,60,130},--deep blue
-    {140,20,20}, --crimson
-    {104,0,148},--dark magenta
-	{25,40,150},
-	{25,50,112}, --dark navy
-    {4,60,198},--bright blue
-	{75,2,130},
-},
-{										--Inferno 4
-{0,0,0},
-	{50,50,50}, --dark grey
-	--{90,90,90}, --grey
-	{37,13,126}, --dark purple
-	{105,0,22}, --dark maroon
-	{163,16,44}, --maroon
-	{50,0,5}, --black red
-	{100,0,10}, --dark red
-	{58,16,61}, --dark violet
-{0,0,0},
-	{100,0,10}, --dark red
-	{245,77,22}, --orange
-},
-{										--Galaxy 5
-{0,0,0},
-	{220,20,40}, --red
-	{248,70,49}, --orange red
-    {219,46,104}, --magenta
-    --{248,70,49}, --orange red
-    {94,6,64}, --midnight satin
-	{216,67,21}, --pure light
-    {28,26,84}, --deep blue
-    {1,1,5}, --deep black
-},
-{										--Magic 6
-{0,0,0},
-	{14,115,51},--green
-    --{84,9,105},--purple
-    {25,25,112}, --dark violet
-    --{182,134,24},--yelloworange
-	{84,9,105},--purple
-	{220,20,20}, --crimson
-{0,0,0},
-	{128,5,5}, --maroon
-    {255,69,0},--orange
-    {0,8,79},--blue
-	{12,149,203},--light blue
-},
-{										--Adrenalin 7
-{0,0,0},
-	{12,10,87}, --very dark blue
-	{0,87,37}, --dark green
-	{124,164,8}, --yellow
-	{153,21,21}, --dark red
-	{207,138,10}, --orange
-	{160,5,5}, --crimson
-	{247,57,57}, --bright red
-	{12,10,87}, --very dark blue
-	--{194,194,8}, --yellow
-	{153,21,21}, --dark red
-	{207,138,10}, --orange
-	{160,5,5}, --crimson
-	{247,57,57}, --bright red
-},
-}
-
-if skinvars.colorcount > 5 then
-	blockColors={
-    {r=0, g=0, b=0},
-    --{r=75, g=0, b=130},
-    --{r=0, g=0, b=205},
-    {r=50, g=205, b=50},
-    {r=255, g=160, b=0},
-    {r=255,g=0,b=0},
-	{r=255,g=255,b=255}
-	}
-end
-
-if US_palette >= 0 and US_palette <= 8 then
-	if US_palette >= 1 then
-		track_colors_index = US_palette
-	else
-		track_colors_index = math.random(#track_colors_choices)
-	end
-
-	track_colors = track_colors_choices[track_colors_index]
-	SetTrackColors(track_colors)
-	palette_names = {"Waltz", "Burning Skies", "Nova", "Inferno", "Galaxy", "Magic", "Adrenalin"}
-	palette_index = palette_names[track_colors_index]
-	print("                                        " .. palette_index)
-	print("Random Track Color Palette: #" .. track_colors_index)
-else
-	ezio = GetAlbumArtPalette{mincount=3, maxcount=6}
-	SetTrackColors(ezio)
-	i=1
-	while(i<=#ezio)do
-		for key,value in pairs(ezio[i]) do 
-		formattedKey = "%s = %d"
-		print(string.format(formattedKey, string.upper(key), value*255))
-		end
-	print("\n")
-	i=i+1
-	end
-end
-
-
---]]
---SetBlockColors{ --this is only used for puzzle modes (which you don't have yet) with multiple colors of blocks
---    {r=93, g=8, b=132},
---	{r=1.0, g=0.27, b=0.2},
---    {r=0.047, g=0.5098, b=0.94},
---    {r=1.0, g=0.85, b=0.4157},
---	{r=0, g=0.29, b=0.08},
---    {r=1,g=0,b=0}
---}
-
 starMesh = BuildMesh{
 				recalculateNormalsEveryFrame=true,
 				splitVertices = true,
@@ -578,7 +576,7 @@ CreateObject{
 		mesh="Dylan_assets/danishCookie_boxes.obj",
 		shader="VertexColorUnlitTintedAdd",
 		shadercolors={
-			_Color=get_value(US_highway_cookie,"highway",{.5,.5,.5,.5})
+			_Color=get_value(US_end_cookie,"highway",{.5,.5,.5,.5})
 		}
 	}
 }
@@ -598,7 +596,7 @@ pyrbotRotationSpeeds_Zone = {}
 
 for i=1,#track do
 	--if not track[i].funkyrot then -- don't place structures at loop/corkscrew nodes (not sure if necessary for these objects)
-		if i%500 == 0 then
+		if i%400 == 0 then
 			hexNodes_Zone[#hexNodes_Zone+1] = i
 			local xOffset = 1500 + math.random(0,3) * 7500
 			if math.random() > 0.5 then xOffset = xOffset * -1 end
@@ -659,7 +657,7 @@ BatchRenderEveryFrame{
 	locations=hexNodes_Zone,
 	rotateWithTrack=false,
 	maxShown=30,
-	maxDistanceShown=15500,
+	maxDistanceShown=12400,
 	rotationspeeds = hexRotationSpeeds_Zone,
 	offsets=hexOffsets_Zone,
 	collisionLayer = -1,
