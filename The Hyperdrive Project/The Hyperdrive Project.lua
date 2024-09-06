@@ -16,7 +16,7 @@ US_wake_type = 		2	-- 0 = random, 1 = MODERN(1.9H - 0.965FR), 2 = LEGACY(1.5H - 
 print(string.format("--  USER SETTINGS:  Palette = %d, SkyBox = %d, Ship = %d, End Cookie = %d, Camera = %d, Wake Type = %d  --", US_palette,US_SkyBox,US_ghost_ship,US_end_cookie,US_ship_cam,US_wake_type))
 
 --   LOAD ASSETS   --
-LA_IlluminDiffuse_B = AssetBundles.hyperdriveproject:LoadAsset('Assets/DBN_Assets/Shaders/IlluminDiffuse_B.shader')
+--LA_IlluminDiffuse_B = AssetBundles.hyperdriveproject:LoadAsset('Assets/DBN_Assets/Shaders/IlluminDiffuse_B.shader')
 LA_unlitedgedblock_white = AssetBundles.hyperdriveproject:LoadAsset('Assets/Shaders/UnlitEdgedBlock_White.shader')
 --END ASSET LOADING--
 
